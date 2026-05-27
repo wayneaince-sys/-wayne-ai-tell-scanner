@@ -12,7 +12,11 @@
         "important to note",
         "in today's world",
         "moreover",
-        "furthermore"
+        "furthermore",
+        "best-in-class",
+        "transformative",
+        "unlock the power of",
+        "seamless"
       ]
     },
     {
@@ -24,7 +28,9 @@
         "more importantly",
         "on the other hand",
         "in conclusion",
-        "overall"
+        "overall",
+        "that said",
+        "more specifically"
       ]
     },
     {
@@ -37,7 +43,11 @@
         "ongoing conversation",
         "critical issue",
         "holistic",
-        "framework"
+        "framework",
+        "ecosystem",
+        "capacity for intimacy",
+        "contextualize",
+        "meaning-making"
       ]
     },
     {
@@ -49,7 +59,20 @@
         "may well",
         "seems to",
         "it appears that",
-        "in many ways"
+        "in many ways",
+        "could potentially",
+        "to some extent"
+      ]
+    },
+    {
+      "label": "Soft opener",
+      "weight": 6,
+      "patterns": [
+        "it is important to note",
+        "it is worth noting",
+        "when we think about",
+        "there are many ways",
+        "in a world where"
       ]
     }
   ]

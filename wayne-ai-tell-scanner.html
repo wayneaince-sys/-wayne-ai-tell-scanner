@@ -1,738 +1,579 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wayne AI Tell Scanner</title>
-  <meta name="description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing." />
-  <link rel="preconnect" href="https://api.fontshare.com" />
-  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet" />
-  <style>
-    :root, [data-theme="light"] {
-      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
-      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
-      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
-      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
-      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
-      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
-      --color-bg: #f7f6f2;
-      --color-surface: #f9f8f5;
-      --color-surface-2: #fbfbf9;
-      --color-surface-offset: #f3f0ec;
-      --color-border: #d4d1ca;
-      --color-divider: #dcd9d5;
-      --color-text: #28251d;
-      --color-text-muted: #6d6a63;
-      --color-text-faint: #a9a69f;
-      --color-text-inverse: #f9f8f4;
-      --color-primary: #01696f;
-      --color-primary-hover: #0c4e54;
-      --color-primary-highlight: #cedcd8;
-      --color-warning: #964219;
-      --color-error: #a13544;
-      --radius-sm: 0.375rem;
-      --radius-md: 0.5rem;
-      --radius-lg: 0.75rem;
-      --radius-xl: 1rem;
-      --shadow-sm: 0 1px 2px rgba(40,37,29,0.06);
-      --shadow-md: 0 8px 24px rgba(40,37,29,0.09);
-      --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-      --font-body: 'Satoshi', 'Inter', sans-serif;
-      --font-display: 'Zodiak', Georgia, serif;
-      --content-default: 1180px;
-    }
-
-    [data-theme="dark"] {
-      --color-bg: #171614;
-      --color-surface: #1c1b19;
-      --color-surface-2: #201f1d;
-      --color-surface-offset: #22211f;
-      --color-border: #393836;
-      --color-divider: #262523;
-      --color-text: #d7d4cc;
-      --color-text-muted: #9a968d;
-      --color-text-faint: #6e6a62;
-      --color-text-inverse: #171614;
-      --color-primary: #4f98a3;
-      --color-primary-hover: #68aab4;
-      --color-primary-highlight: rgba(79,152,163,0.16);
-      --color-warning: #c57a4d;
-      --color-error: #dd6974;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
-      --shadow-md: 0 12px 30px rgba(0,0,0,0.34);
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: var(--font-body);
-      font-size: var(--text-base);
-      line-height: 1.6;
-      background: var(--color-bg);
-      color: var(--color-text);
-      -webkit-font-smoothing: antialiased;
-    }
-    button, textarea, select { font: inherit; }
-    .shell {
-      width: min(calc(100% - 2rem), var(--content-default));
-      margin: 0 auto;
-      padding: var(--space-6) 0 var(--space-12);
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-4);
-      margin-bottom: var(--space-8);
-      padding: var(--space-4) 0;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      min-width: 0;
-    }
-    .logo {
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--color-primary), var(--color-warning));
-      display: grid;
-      place-items: center;
-      color: white;
-      box-shadow: var(--shadow-sm);
-      flex: 0 0 auto;
-    }
-    .brand h1 {
-      margin: 0;
-      font-size: var(--text-lg);
-      line-height: 1.1;
-      font-family: var(--font-display);
-      letter-spacing: -0.02em;
-    }
-    .brand p {
-      margin: 0;
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-    }
-    .top-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-      justify-content: flex-end;
-    }
-    .btn {
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
-      color: var(--color-text);
-      padding: 0.82rem 1rem;
-      min-height: 44px;
-      border-radius: var(--radius-md);
-      transition: transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
-    }
-    .btn:hover { transform: translateY(-1px); }
-    .btn-primary {
-      background: var(--color-primary);
-      border-color: var(--color-primary);
-      color: var(--color-text-inverse);
-    }
-    .btn-primary:hover { background: var(--color-primary-hover); }
-    .hero {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: var(--space-6);
-      margin-bottom: var(--space-8);
-    }
-    .panel {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-md);
-    }
-    .hero-copy {
-      padding: var(--space-8);
-      background:
-        radial-gradient(circle at top left, var(--color-primary-highlight), transparent 45%),
-        var(--color-surface);
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: 0.35rem 0.65rem;
-      background: var(--color-surface-offset);
-      border: 1px solid var(--color-border);
-      border-radius: 999px;
-      font-size: var(--text-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--color-text-muted);
-      margin-bottom: var(--space-4);
-    }
-    .hero h2 {
-      margin: 0 0 var(--space-4);
-      font-family: var(--font-display);
-      font-size: var(--text-2xl);
-      line-height: 0.98;
-      max-width: 14ch;
-    }
-    .hero p {
-      margin: 0 0 var(--space-4);
-      max-width: 60ch;
-      color: var(--color-text-muted);
-    }
-    .hero-points {
-      display: grid;
-      gap: var(--space-3);
-      margin-top: var(--space-5);
-    }
-    .hero-points div {
-      display: flex;
-      gap: var(--space-3);
-      align-items: flex-start;
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-divider);
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-lg);
-    }
-    .hero-points strong { display: block; }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-3);
-      padding: var(--space-6);
-      align-content: start;
-    }
-    .stat {
-      padding: var(--space-4);
-      border-radius: var(--radius-lg);
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-divider);
-    }
-    .stat-label {
-      color: var(--color-text-muted);
-      font-size: var(--text-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: var(--space-2);
-    }
-    .stat-value {
-      font-size: var(--text-xl);
-      line-height: 1;
-      font-weight: 700;
-    }
-    .workspace {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: var(--space-6);
-      align-items: start;
-    }
-    .editor, .results { padding: var(--space-6); }
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-    }
-    .section-title h3 {
-      margin: 0;
-      font-size: var(--text-lg);
-      line-height: 1.1;
-    }
-    .section-title p {
-      margin: 0;
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-    }
-    textarea {
-      width: 100%;
-      min-height: 460px;
-      resize: vertical;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4);
-      background: var(--color-surface-2);
-      color: var(--color-text);
-      outline: none;
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
-    }
-    textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-highlight); }
-    .control-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-3);
-      margin-top: var(--space-4);
-    }
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-3);
-      margin-bottom: var(--space-5);
-    }
-    .meta-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-divider);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4);
-    }
-    .meter {
-      height: 12px;
-      width: 100%;
-      background: var(--color-surface-offset);
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid var(--color-divider);
-      margin-top: var(--space-3);
-    }
-    .meter-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--color-warning), var(--color-error));
-      transition: width 400ms var(--transition);
-    }
-    .risk-band {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.3rem 0.7rem;
-      border-radius: 999px;
-      font-size: var(--text-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      background: var(--color-primary-highlight);
-      color: var(--color-text);
-      border: 1px solid var(--color-border);
-    }
-    .list {
-      display: grid;
-      gap: var(--space-3);
-      margin-top: var(--space-4);
-    }
-    .flag {
-      padding: var(--space-4);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-divider);
-      background: var(--color-surface-2);
-    }
-    .flag strong { display: block; margin-bottom: 0.2rem; }
-    .flag small { color: var(--color-text-muted); }
-    .rewrite-box {
-      margin-top: var(--space-5);
-      padding: var(--space-4);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-divider);
-      background: var(--color-surface-2);
-    }
-    .rewrite-box h4, .report h4 { margin: 0 0 var(--space-3); font-size: var(--text-base); }
-    .rewrite-list { display: grid; gap: var(--space-3); }
-    .rewrite-item {
-      padding: var(--space-3);
-      border-radius: var(--radius-md);
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-    }
-    .footer-note {
-      margin-top: var(--space-6);
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-    }
-    .report {
-      margin-top: var(--space-5);
-      padding: var(--space-4);
-      border-radius: var(--radius-lg);
-      border: 1px dashed var(--color-border);
-      background: var(--color-surface-offset);
-      white-space: pre-wrap;
-    }
-    @media (max-width: 980px) {
-      .hero, .workspace { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      textarea { min-height: 320px; }
-    }
-    @media (max-width: 640px) {
-      .shell { width: min(calc(100% - 1rem), var(--content-default)); }
-      .topbar { align-items: flex-start; flex-direction: column; }
-      .meta-grid, .stats { grid-template-columns: 1fr; }
-      .hero-copy, .editor, .results { padding: var(--space-4); }
-      .hero h2 { max-width: 12ch; }
-      .top-actions { width: 100%; justify-content: stretch; }
-      .top-actions .btn { flex: 1 1 auto; }
-    }
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing.">
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    body {background-color: #f5f4ef}
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.4px 'Helvetica Neue'; color: #ffffff; -webkit-text-stroke: #ffffff; min-height: 16.0px}
+    span.s1 {font-kerning: none}
   </style>
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M4 18L12 4l8 14" />
-            <path d="M8 14h8" />
-          </svg>
-        </div>
-        <div>
-          <h1>Wayne AI Tell Scanner</h1>
-          <p>Personal-use draft audit tool built to catch AI sheen before it stains your copy.</p>
-        </div>
-      </div>
-      <div class="top-actions">
-        <button class="btn" id="sampleBtn" type="button">Load sample</button>
-        <button class="btn" id="themeBtn" type="button" aria-label="Switch theme">Toggle theme</button>
-        <button class="btn btn-primary" id="exportBtn" type="button">Export report</button>
-      </div>
-    </header>
-
-    <section class="hero">
-      <article class="panel hero-copy">
-        <div class="eyebrow">Wayne-mode audit</div>
-        <h2>This tool does not chase ghosts. It hunts patterns.</h2>
-        <p>Paste a draft. The scanner reads for repetition, bland transitions, abstraction fog, flat cadence, and the kind of bloodless phrasing that makes honest writing sound machine-washed.</p>
-        <div class="hero-points">
-          <div><span>01</span><div><strong>Flag the sludge.</strong> Catch filler, stacked transitions, and generic posture before publication.</div></div>
-          <div><span>02</span><div><strong>Score the risk.</strong> Get a practical AI-sheen score, not fake certainty about authorship.</div></div>
-          <div><span>03</span><div><strong>Rewrite with teeth.</strong> Turn soft lines into sharper, human sentences with pressure and purpose.</div></div>
-        </div>
-      </article>
-
-      <aside class="panel stats" aria-label="Scanner status cards">
-        <div class="stat">
-          <div class="stat-label">Primary read</div>
-          <div class="stat-value" id="sentenceCount">0</div>
-          <div>Sentences scanned</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Word count</div>
-          <div class="stat-value" id="wordCount">0</div>
-          <div>Total words in current draft</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Cadence spread</div>
-          <div class="stat-value" id="varianceScore">0</div>
-          <div>Sentence-length variation score</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Flag total</div>
-          <div class="stat-value" id="flagCount">0</div>
-          <div>Risk patterns detected</div>
-        </div>
-      </aside>
-    </section>
-
-    <section class="workspace">
-      <article class="panel editor">
-        <div class="section-title">
-          <div>
-            <h3>Draft input</h3>
-            <p>Best results come from 150 words or more.</p>
-          </div>
-        </div>
-        <label class="sr-only" for="inputText">Draft text</label>
-        <textarea id="inputText" placeholder="Paste your article, post, op-ed, chapter section, or newsletter draft here..."></textarea>
-        <div class="control-row">
-          <button class="btn btn-primary" id="scanBtn" type="button">Scan draft</button>
-          <button class="btn" id="clearBtn" type="button">Clear</button>
-        </div>
-        <p class="footer-note">Personal-use scanner. Rule-based. Honest about limits. Strong on style triage.</p>
-      </article>
-
-      <article class="panel results">
-        <div class="section-title">
-          <div>
-            <h3>Risk readout</h3>
-            <p>Read the problem areas first, then use the rewrites.</p>
-          </div>
-          <span class="risk-band" id="riskBand">No scan yet</span>
-        </div>
-
-        <div class="meta-grid">
-          <div class="meta-card">
-            <div class="stat-label">AI-sheen score</div>
-            <div class="stat-value" id="scoreValue">0</div>
-            <div class="meter"><div class="meter-bar" id="meterBar"></div></div>
-          </div>
-          <div class="meta-card">
-            <div class="stat-label">Top issue</div>
-            <div id="topIssue">None</div>
-          </div>
-          <div class="meta-card">
-            <div class="stat-label">Reading</div>
-            <div id="summaryLine">Paste text and run a scan.</div>
-          </div>
-        </div>
-
-        <div>
-          <h4>Flags</h4>
-          <div id="flagList" class="list"></div>
-        </div>
-
-        <div class="rewrite-box">
-          <h4>Wayne-mode rewrite prompts</h4>
-          <div id="rewriteList" class="rewrite-list"></div>
-        </div>
-
-        <div class="report" id="reportBox">No report generated yet.</div>
-      </article>
-    </section>
-  </main>
-
-  <script>
-    const inputText = document.getElementById('inputText');
-    const scanBtn = document.getElementById('scanBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const sampleBtn = document.getElementById('sampleBtn');
-    const exportBtn = document.getElementById('exportBtn');
-    const themeBtn = document.getElementById('themeBtn');
-    const scoreValue = document.getElementById('scoreValue');
-    const riskBand = document.getElementById('riskBand');
-    const topIssue = document.getElementById('topIssue');
-    const summaryLine = document.getElementById('summaryLine');
-    const flagList = document.getElementById('flagList');
-    const rewriteList = document.getElementById('rewriteList');
-    const reportBox = document.getElementById('reportBox');
-    const meterBar = document.getElementById('meterBar');
-    const sentenceCount = document.getElementById('sentenceCount');
-    const wordCount = document.getElementById('wordCount');
-    const varianceScore = document.getElementById('varianceScore');
-    const flagCount = document.getElementById('flagCount');
-
-   let fillerPatterns = [];
-
-    const rewriteTemplates = {
-      'Corporate filler': 'Replace inflated phrasing with a blunt noun and a hard verb. Example move: "This issue is important" becomes "This issue cuts straight into the spine of the argument."',
-      'Soft transitions': 'Cut the throat-clearing transition. Start the next sentence with the point itself, not the hallway leading to it.',
-      'Abstraction fog': 'Trade concepts for concrete stakes. Name the actor, the action, the damage, and the consequence.',
-      'Hedging': 'If you believe it, plant the flag. Swap maybe-language for a claim you can defend in one line.'
-    };
-
-    const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation.`;
-async function loadPhraseLibrary() {
-  try {
-    const response = await fetch('./phrases.json');
-    if (!response.ok) throw new Error('Could not load phrases.json');
-    const data = await response.json();
-    fillerPatterns = (data.groups || []).map(group => ({
-      label: group.label,
-      weight: group.weight,
-      patterns: (group.patterns || []).map(phrase => {
-        const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return new RegExp(`\\b${escaped}\\b`, 'gi');
-      })
-    }));
-  } catch (error) {
-    reportBox.textContent = 'Phrase library failed to load. Check phrases.json and refresh.';
-  }
-}
-    
-    function tokenizeSentences(text) {
-      return text
-        .replace(/\n+/g, ' ')
-        .match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [];
-    }
-
-    function tokenizeWords(text) {
-      return text.toLowerCase().match(/\b[\w'-]+\b/g) || [];
-    }
-
-    function average(arr) {
-      return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-    }
-
-    function stdDev(arr) {
-      if (!arr.length) return 0;
-      const mean = average(arr);
-      const variance = average(arr.map(n => (n - mean) ** 2));
-      return Math.sqrt(variance);
-    }
-
-    function analyzeText(text) {
-      const sentences = tokenizeSentences(text);
-      const words = tokenizeWords(text);
-      const wordFreq = words.reduce((acc, word) => {
-        acc[word] = (acc[word] || 0) + 1;
-        return acc;
-      }, {});
-
-      const findings = [];
-      let score = 0;
-
-      fillerPatterns.forEach(group => {
-        let hits = 0;
-        group.patterns.forEach(pattern => {
-          const matches = text.match(pattern);
-          if (matches) hits += matches.length;
-        });
-        if (hits > 0) {
-          const points = Math.min(group.weight * hits, group.weight * 2);
-          score += points;
-          findings.push({
-            label: group.label,
-            hits,
-            points,
-            detail: `${hits} trigger${hits > 1 ? 's' : ''} caught in this category.`
-          });
-        }
-      });
-
-      const repeatedWords = Object.entries(wordFreq)
-        .filter(([word, count]) => count >= 5 && word.length > 5)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-
-      if (repeatedWords.length) {
-        const points = Math.min(12, repeatedWords.length * 3);
-        score += points;
-        findings.push({
-          label: 'Repetition drag',
-          hits: repeatedWords.length,
-          points,
-          detail: `Repeated terms: ${repeatedWords.map(([word, count]) => `${word} (${count})`).join(', ')}.`
-        });
-      }
-
-      const sentenceLengths = sentences.map(s => tokenizeWords(s).length);
-      const spread = stdDev(sentenceLengths);
-      const meanLen = average(sentenceLengths);
-      let cadencePoints = 0;
-
-      if (sentences.length >= 4 && spread < 4.5) cadencePoints += 12;
-      if (meanLen > 28) cadencePoints += 10;
-      if (sentences.length >= 5 && sentences.filter(len => len < 8).length === 0) cadencePoints += 6;
-      if (cadencePoints > 0) {
-        score += cadencePoints;
-        findings.push({
-          label: 'Flat cadence',
-          hits: cadencePoints,
-          points: cadencePoints,
-          detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.`
-        });
-      }
-
-      const passiveHints = (text.match(/\b(is|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
-      if (passiveHints >= 2) {
-        const points = Math.min(10, passiveHints * 2);
-        score += points;
-        findings.push({
-          label: 'Passive drift',
-          hits: passiveHints,
-          points,
-          detail: `${passiveHints} passive-looking construction${passiveHints > 1 ? 's' : ''} spotted.`
-        });
-      }
-
-      score = Math.min(100, Math.round(score));
-      const band = score >= 70 ? 'High risk' : score >= 40 ? 'Moderate risk' : score > 0 ? 'Low risk' : 'Clean read';
-      const top = findings.sort((a, b) => b.points - a.points)[0] || null;
-      const rewrites = findings.slice(0, 4).map(item => ({
-        label: item.label,
-        prompt: rewriteTemplates[item.label] || 'Tighten the sentence. Cut hedging, sharpen the subject, and make the action carry weight.'
-      }));
-
-      const report = [
-        'WAYNE AI TELL SCANNER REPORT',
-        '--------------------------------',
-        `Risk band: ${band}`,
-        `AI-sheen score: ${score}/100`,
-        `Word count: ${words.length}`,
-        `Sentence count: ${sentences.length}`,
-        `Cadence spread: ${spread.toFixed(1)}`,
-        '',
-        'Top findings:',
-        ...(findings.length ? findings.map(item => `- ${item.label}: ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
-        '',
-        'Rewrite marching orders:',
-        ...(rewrites.length ? rewrites.map(item => `- ${item.label}: ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.'])
-      ].join('\n');
-
-      return {
-        score,
-        band,
-        top,
-        findings,
-        rewrites,
-        report,
-        wordTotal: words.length,
-        sentenceTotal: sentences.length,
-        spread: spread.toFixed(1)
-      };
-    }
-
-    function renderResults(result) {
-      scoreValue.textContent = result.score;
-      riskBand.textContent = result.band;
-      topIssue.textContent = result.top ? result.top.label : 'No dominant issue';
-      summaryLine.textContent = result.findings.length ? `${result.findings.length} pattern groups triggered. Start with ${result.top.label.toLowerCase()}.` : 'No major AI-sheen patterns triggered in this pass.';
-      meterBar.style.width = `${result.score}%`;
-      sentenceCount.textContent = result.sentenceTotal;
-      wordCount.textContent = result.wordTotal;
-      varianceScore.textContent = result.spread;
-      flagCount.textContent = result.findings.length;
-      flagList.innerHTML = result.findings.length ? result.findings.map(item => `
-        <article class="flag">
-          <strong>${item.label}</strong>
-          <div>${item.detail}</div>
-          <small>Penalty: ${item.points} points</small>
-        </article>
-      `).join('') : '<article class="flag"><strong>Clean read</strong><div>No major AI-sheen patterns jumped off the page in this pass.</div><small>Read it aloud once anyway. That is where the weak joints show.</small></article>';
-
-      rewriteList.innerHTML = result.rewrites.length ? result.rewrites.map(item => `
-        <div class="rewrite-item">
-          <strong>${item.label}</strong>
-          <div>${item.prompt}</div>
-        </div>
-      `).join('') : '<div class="rewrite-item"><strong>Holding line</strong><div>The draft reads clean. Next pass should focus on argument pressure, not AI-sheen cleanup.</div></div>';
-
-      reportBox.textContent = result.report;
-    }
-
-    function runScan() {
-      const text = inputText.value.trim();
-      if (!text) {
-        reportBox.textContent = 'Paste text first. The scanner cannot read an empty chamber.';
-        return;
-      }
-      renderResults(analyzeText(text));
-    }
-
- sampleBtn.addEventListener('click', async () => {
-  inputText.value = sampleText;
-  if (!fillerPatterns.length) {
-    await loadPhraseLibrary();
-  }
-  runScan();
-});
-    clearBtn.addEventListener('click', () => {
-      inputText.value = '';
-      renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0' });
-    });
-    sampleBtn.addEventListener('click', () => {
-      inputText.value = sampleText;
-      runScan();
-    });
-    exportBtn.addEventListener('click', () => {
-      const blob = new Blob([reportBox.textContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'wayne-ai-tell-report.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-    loadPhraseLibrary();
-
-    (function initTheme() {
-      const root = document.documentElement;
-      let current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.setAttribute('data-theme', current);
-      themeBtn.addEventListener('click', () => {
-        current = current === 'dark' ? 'light' : 'dark';
-        root.setAttribute('data-theme', current);
-      });
-    })();
-  </script>
+<p class="p1"><span class="s1"></span><br></p>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;!DOCTYPE html&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;html lang="en" data-theme="light"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;head&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;Wayne AI Tell Scanner&lt;/title&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing." /&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;link rel="preconnect" href="https://api.fontshare.com" /&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&amp;f[]=zodiak@400,700&amp;display=swap" rel="stylesheet" /&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>:root, [data-theme="light"] {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-bg: #f7f6f2;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-surface: #f9f8f5;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-surface-2: #fbfbf9;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-surface-offset: #f3f0ec;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-border: #d4d1ca;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-divider: #dcd9d5;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text: #28251d;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text-muted: #6d6a63;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text-faint: #a9a69f;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text-inverse: #f9f8f4;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-primary: #01696f;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-primary-hover: #0c4e54;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-primary-highlight: #cedcd8;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-warning: #964219;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-error: #a13544;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--radius-sm: 0.375rem;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--radius-md: 0.5rem;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--radius-lg: 0.75rem;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--radius-xl: 1rem;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--shadow-sm: 0 1px 2px rgba(40,37,29,0.06);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--shadow-md: 0 8px 24px rgba(40,37,29,0.09);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--font-body: 'Satoshi', 'Inter', sans-serif;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--font-display: 'Zodiak', Georgia, serif;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--content-default: 1240px;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>[data-theme="dark"] {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-bg: #171614;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-surface: #1c1b19;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-surface-2: #201f1d;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-surface-offset: #22211f;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-border: #393836;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-divider: #262523;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text: #d7d4cc;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text-muted: #9a968d;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text-faint: #6e6a62;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-text-inverse: #171614;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-primary: #4f98a3;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-primary-hover: #68aab4;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-primary-highlight: rgba(79,152,163,0.16);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-warning: #c57a4d;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--color-error: #dd6974;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--shadow-sm: 0 1px 2px rgba(0,0,0,0.25);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>--shadow-md: 0 12px 30px rgba(0,0,0,0.34);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>* { box-sizing: border-box; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>body {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>margin: 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>min-height: 100vh;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>font-family: var(--font-body);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>font-size: var(--text-base);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>line-height: 1.6;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>background: var(--color-bg);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>color: var(--color-text);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>-webkit-font-smoothing: antialiased;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>button, textarea, input, select { font: inherit; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.shell { width: min(calc(100% - 2rem), var(--content-default)); margin: 0 auto; padding: var(--space-6) 0 var(--space-12); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.topbar, .section-title, .split-header { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.topbar { margin-bottom: var(--space-8); padding: var(--space-4) 0; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.brand { display:flex; align-items:center; gap:var(--space-3); min-width:0; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.logo { width:2.5rem; height:2.5rem; border-radius:var(--radius-md); background:linear-gradient(135deg,var(--color-primary),var(--color-warning)); display:grid; place-items:center; color:white; box-shadow:var(--shadow-sm); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.brand h1 { margin:0; font-size:var(--text-lg); line-height:1.1; font-family:var(--font-display); letter-spacing:-0.02em; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.brand p, .muted, .helper { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.top-actions, .control-row { display:flex; flex-wrap:wrap; gap:var(--space-2); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.btn { border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); padding:0.82rem 1rem; min-height:44px; border-radius:var(--radius-md); transition:transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition); cursor:pointer; box-shadow:var(--shadow-sm); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.btn:hover { transform: translateY(-1px); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.btn-primary { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-text-inverse); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.btn-primary:hover { background:var(--color-primary-hover); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero, .workspace { display:grid; gap:var(--space-6); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero { grid-template-columns:1.15fr 0.85fr; margin-bottom:var(--space-8); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.workspace { grid-template-columns:1fr 1fr; align-items:start; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-xl); box-shadow:var(--shadow-md); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero-copy, .editor, .results { padding:var(--space-6); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero-copy { background:radial-gradient(circle at top left, var(--color-primary-highlight), transparent 45%), var(--color-surface); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.eyebrow, .risk-band, .chip { display:inline-flex; align-items:center; gap:var(--space-2); padding:0.35rem 0.65rem; border-radius:999px; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.11em; border:1px solid var(--color-border); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.eyebrow, .chip { background:var(--color-surface-offset); color:var(--color-text-muted); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.risk-band { background:var(--color-primary-highlight); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero h2 { margin:0 0 var(--space-4); font-family:var(--font-display); font-size:var(--text-2xl); line-height:0.98; max-width:14ch; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero p { margin:0 0 var(--space-4); max-width:60ch; color:var(--color-text-muted); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero-points, .list, .rewrite-list, .upload-box { display:grid; gap:var(--space-3); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.hero-points div, .flag, .rewrite-item, .upload-box { background:var(--color-surface-2); border:1px solid var(--color-divider); border-radius:var(--radius-lg); padding:var(--space-4); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.stats { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-3); padding:var(--space-6); align-content:start; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.stat, .meta-card { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.stat-label { color:var(--color-text-muted); font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:var(--space-2); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.stat-value { font-size:var(--text-xl); line-height:1; font-weight:700; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>textarea { width:100%; min-height:360px; resize:vertical; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:var(--space-4); background:var(--color-surface-2); color:var(--color-text); outline:none; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>textarea:focus, input[type="file"]:focus { border-color:var(--color-primary); box-shadow:0 0 0 3px var(--color-primary-highlight); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.meta-grid, .score-grid, .side-by-side { display:grid; gap:var(--space-3); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.meta-grid { grid-template-columns:repeat(3,1fr); margin-bottom:var(--space-5); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.score-grid { grid-template-columns:repeat(4,1fr); margin-bottom:var(--space-5); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.side-by-side { grid-template-columns:1fr 1fr; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.meter { height:12px; width:100%; background:var(--color-surface-offset); border-radius:999px; overflow:hidden; border:1px solid var(--color-divider); margin-top:var(--space-3); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.meter-bar { height:100%; width:0%; background:linear-gradient(90deg, var(--color-warning), var(--color-error)); transition: width 400ms var(--transition); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.compare-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); min-height:220px; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.compare-box h4, .report h4, .results h4 { margin:0 0 var(--space-3); font-size:var(--text-base); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.compare-line { padding:var(--space-3); border-radius:var(--radius-md); background:var(--color-surface); border:1px solid var(--color-border); margin-bottom:var(--space-3); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.compare-line strong { display:block; margin-bottom:0.2rem; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.footer-note { margin-top:var(--space-6); color:var(--color-text-muted); font-size:var(--text-sm); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>@media (max-width: 980px) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.hero, .workspace, .meta-grid, .score-grid, .side-by-side { grid-template-columns:1fr; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.stats { grid-template-columns:repeat(2,1fr); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>@media (max-width: 640px) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.shell { width:min(calc(100% - 1rem), var(--content-default)); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.topbar, .section-title, .split-header { flex-direction:column; align-items:flex-start; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.stats { grid-template-columns:1fr; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.hero-copy, .editor, .results { padding:var(--space-4); }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.top-actions, .control-row { width:100%; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>.top-actions .btn, .control-row .btn { flex:1 1 auto; }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;/head&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;body&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;main class="shell"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>&lt;header class="topbar"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="brand"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="logo" aria-hidden="true"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M4 18L12 4l8 14" /&gt;&lt;path d="M8 14h8" /&gt;&lt;/svg&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;h1&gt;Wayne AI Tell Scanner&lt;/h1&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;p&gt;Now with file upload, markdown export, sharper scoring, and rewrite pressure.&lt;/p&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="top-actions"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="btn" id="sampleBtn" type="button"&gt;Load sample&lt;/button&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="btn" id="themeBtn" type="button"&gt;Toggle theme&lt;/button&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="btn" id="exportTxtBtn" type="button"&gt;Export TXT&lt;/button&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="btn btn-primary" id="exportMdBtn" type="button"&gt;Export MD&lt;/button&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/header&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>&lt;section class="hero"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;article class="panel hero-copy"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="eyebrow"&gt;Wayne-mode audit&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h2&gt;Cut the filler. Break the rhythm. Put some blood back in the sentence.&lt;/h2&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;p&gt;This pass goes beyond keyword swats. It scores cadence, repetition, hedging, abstraction, passive drift, and soft openers, then shows you what the sentence looked like before and after the pressure hit it.&lt;/p&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="hero-points"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;&lt;strong&gt;Phrase library expanded.&lt;/strong&gt;&lt;span class="muted"&gt;More trigger families, weighted scoring, cleaner reads.&lt;/span&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;&lt;strong&gt;Markdown export added.&lt;/strong&gt;&lt;span class="muted"&gt;Take the audit straight into Obsidian, Scrivener, or notes.&lt;/span&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;&lt;strong&gt;Upload support included.&lt;/strong&gt;&lt;span class="muted"&gt;Drop in `.txt`, `.md`, `.csv`, or other readable text files.&lt;/span&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/article&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;aside class="panel stats"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="stat"&gt;&lt;div class="stat-label"&gt;Sentences&lt;/div&gt;&lt;div class="stat-value" id="sentenceCount"&gt;0&lt;/div&gt;&lt;div&gt;Current draft read&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="stat"&gt;&lt;div class="stat-label"&gt;Words&lt;/div&gt;&lt;div class="stat-value" id="wordCount"&gt;0&lt;/div&gt;&lt;div&gt;Total words scanned&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="stat"&gt;&lt;div class="stat-label"&gt;Variation&lt;/div&gt;&lt;div class="stat-value" id="varianceScore"&gt;0&lt;/div&gt;&lt;div&gt;Cadence spread&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="stat"&gt;&lt;div class="stat-label"&gt;Flags&lt;/div&gt;&lt;div class="stat-value" id="flagCount"&gt;0&lt;/div&gt;&lt;div&gt;Pattern groups tripped&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/aside&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/section&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>&lt;section class="workspace"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;article class="panel editor"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="section-title"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h3&gt;Draft input&lt;/h3&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;p class="helper"&gt;Paste text or upload a text-based file.&lt;/p&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;span class="chip" id="fileNameChip"&gt;No file loaded&lt;/span&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="upload-box"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;label for="fileInput"&gt;&lt;strong&gt;Upload file&lt;/strong&gt;&lt;/label&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input id="fileInput" type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.rtf" /&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="helper"&gt;Best fit: text-based files. PDFs and DOCX are not wired in this version.&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;label class="sr-only" for="inputText"&gt;Draft text&lt;/label&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;textarea id="inputText" placeholder="Paste your article, essay, chapter section, op-ed, or newsletter draft here..."&gt;&lt;/textarea&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="control-row" style="margin-top:1rem;"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;button class="btn btn-primary" id="scanBtn" type="button"&gt;Scan draft&lt;/button&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;button class="btn" id="clearBtn" type="button"&gt;Clear&lt;/button&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;p class="footer-note"&gt;This tool flags AI-sheen risk. It does not prove authorship. It is a style triage blade, not a courtroom witness.&lt;/p&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/article&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;article class="panel results"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="section-title"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h3&gt;Risk readout&lt;/h3&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;p class="helper"&gt;Read the weak joints first.&lt;/p&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;span class="risk-band" id="riskBand"&gt;No scan yet&lt;/span&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="meta-grid"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="meta-card"&gt;&lt;div class="stat-label"&gt;AI-sheen score&lt;/div&gt;&lt;div class="stat-value" id="scoreValue"&gt;0&lt;/div&gt;&lt;div class="meter"&gt;&lt;div class="meter-bar" id="meterBar"&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="meta-card"&gt;&lt;div class="stat-label"&gt;Top issue&lt;/div&gt;&lt;div id="topIssue"&gt;None&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="meta-card"&gt;&lt;div class="stat-label"&gt;Reading&lt;/div&gt;&lt;div id="summaryLine"&gt;Paste text and run a scan.&lt;/div&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="score-grid" id="scoreGrid"&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;h4&gt;Flags&lt;/h4&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div id="flagList" class="list"&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="rewrite-box" style="margin-top:1.25rem;"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="split-header"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h4 style="margin:0;"&gt;Side-by-side rewrite suggestions&lt;/h4&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;span class="chip"&gt;Top 3 lines&lt;/span&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="side-by-side" style="margin-top:1rem;"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="compare-box"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">              </span>&lt;h4&gt;Original lines&lt;/h4&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">              </span>&lt;div id="originalCompare"&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="compare-box"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">              </span>&lt;h4&gt;Wayne-mode rewrites&lt;/h4&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">              </span>&lt;div id="rewriteCompare"&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="rewrite-box" style="margin-top:1.25rem;"&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;h4&gt;Rewrite marching orders&lt;/h4&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div id="rewriteList" class="rewrite-list"&gt;&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="report" id="reportBox"&gt;No report generated yet.&lt;/div&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/article&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/section&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/main&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const inputText = document.getElementById('inputText');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const fileInput = document.getElementById('fileInput');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const fileNameChip = document.getElementById('fileNameChip');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const scanBtn = document.getElementById('scanBtn');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const clearBtn = document.getElementById('clearBtn');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const sampleBtn = document.getElementById('sampleBtn');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const exportTxtBtn = document.getElementById('exportTxtBtn');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const exportMdBtn = document.getElementById('exportMdBtn');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const themeBtn = document.getElementById('themeBtn');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const scoreValue = document.getElementById('scoreValue');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const riskBand = document.getElementById('riskBand');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const topIssue = document.getElementById('topIssue');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const summaryLine = document.getElementById('summaryLine');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const flagList = document.getElementById('flagList');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const rewriteList = document.getElementById('rewriteList');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const originalCompare = document.getElementById('originalCompare');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const rewriteCompare = document.getElementById('rewriteCompare');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const reportBox = document.getElementById('reportBox');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const meterBar = document.getElementById('meterBar');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const sentenceCount = document.getElementById('sentenceCount');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const wordCount = document.getElementById('wordCount');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const varianceScore = document.getElementById('varianceScore');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const flagCount = document.getElementById('flagCount');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const scoreGrid = document.getElementById('scoreGrid');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>let fillerPatterns = [];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>let latestResult = null;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>const rewriteTemplates = {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Soft transitions': 'Cut the hallway words. Start with the claim, not the throat-clearing.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Abstraction fog': 'Name the actor, the action, the damage, and the stake. Fog is not argument.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Hedging': 'Plant the flag. If the claim matters, stop apologizing for it.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Repetition drag': 'Break repeated wording with one specific noun and one live verb.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Flat cadence': 'Mix short hits with one longer sentence. Uniform rhythm is where lifeless copy hides.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Passive drift': 'Put the actor in the subject position and make the verb move.',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>'Soft opener': 'Open with conflict, fact, or consequence. Stop easing into the point like you are knocking on your own door.'</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>};</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function tokenizeSentences(text) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return text.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s =&gt; s.trim()).filter(Boolean) || [];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function tokenizeWords(text) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return text.toLowerCase().match(/\b[\w'-]+\b/g) || [];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function average(arr) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return arr.length ? arr.reduce((a, b) =&gt; a + b, 0) / arr.length : 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function stdDev(arr) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (!arr.length) return 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const mean = average(arr);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const variance = average(arr.map(n =&gt; (n - mean) ** 2));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return Math.sqrt(variance);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function escapeRegex(phrase) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&amp;');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>async function loadPhraseLibrary() {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>try {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const response = await fetch('./phrases.json');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>if (!response.ok) throw new Error('Could not load phrases.json');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const data = await response.json();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const builtInGroups = [</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>{ label: 'Corporate filler', weight: 9, patterns: ['delve','nuance','leverage','robust','meaningful','important to note',"in today's world",'furthermore','moreover','best-in-class','powerful solution'] },</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>{ label: 'Soft transitions', weight: 8, patterns: ['however','additionally','more importantly','on the other hand','in conclusion','overall','that said','more specifically'] },</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>{ label: 'Abstraction fog', weight: 8, patterns: ['complex landscape','multifaceted','various stakeholders','ongoing conversation','critical issue','holistic','framework','ecosystem','meaning-making'] },</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>{ label: 'Hedging', weight: 7, patterns: ['arguably','perhaps','may well','seems to','it appears that','in many ways','could potentially'] },</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>{ label: 'Soft opener', weight: 6, patterns: ['it is important to note','it is worth noting','when we think about','there are many ways','in a world where'] }</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const remoteGroups = Array.isArray(data.groups) ? data.groups : [];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const merged = [...builtInGroups, ...remoteGroups];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const deduped = new Map();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>merged.forEach(group =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>if (!deduped.has(group.label)) deduped.set(group.label, { label: group.label, weight: group.weight, patterns: [] });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>deduped.get(group.label).patterns.push(...(group.patterns || []));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>fillerPatterns = Array.from(deduped.values()).map(group =&gt; ({</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>label: group.label,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>weight: group.weight,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>patterns: [...new Set(group.patterns)].map(phrase =&gt; new RegExp(`\\b${escapeRegex(phrase)}\\b`, 'gi'))</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>}));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>} catch (error) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>reportBox.textContent = 'Phrase library failed to load. Check phrases.json and refresh.';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function generateSentenceRewrite(sentence) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>let revised = sentence.trim();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\b(In today's world|Overall|Furthermore|Additionally|However|In conclusion|It is important to note that|It is worth noting that)\b[,:]?\s*/gi, '');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\b(arguably|perhaps|may well|seems to|it appears that|in many ways)\b\s*/gi, '');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\b(multifaceted|holistic|robust|meaningful|complex)\b/gi, match =&gt; ({multifaceted:'layered', holistic:'whole', robust:'strong', meaningful:'real', complex:'hard'}[match.toLowerCase()] || match));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\bframework\b/gi, 'structure');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\bconversation\b/gi, 'fight');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\bstakeholders\b/gi, 'players');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>revised = revised.replace(/\s{2,}/g, ' ').trim();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (revised &amp;&amp; !/[.!?]$/.test(revised)) revised += '.';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (revised.length &amp;&amp; revised[0] === revised[0].toLowerCase()) revised = revised[0].toUpperCase() + revised.slice(1);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return revised || sentence;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function analyzeText(text) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const sentences = tokenizeSentences(text);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const words = tokenizeWords(text);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const wordFreq = words.reduce((acc, word) =&gt; { acc[word] = (acc[word] || 0) + 1; return acc; }, {});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const findings = [];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const scoreBreakdown = [];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>let score = 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>fillerPatterns.forEach(group =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>let hits = 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>group.patterns.forEach(pattern =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>const matches = text.match(pattern);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>if (matches) hits += matches.length;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>if (hits &gt; 0) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>const points = Math.min(group.weight * hits, group.weight * 3);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>score += points;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>findings.push({ label: group.label, hits, points, detail: `${hits} trigger${hits &gt; 1 ? 's' : ''} caught in this category.` });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>scoreBreakdown.push({ label: group.label, points });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const repeatedWords = Object.entries(wordFreq).filter(([word, count]) =&gt; count &gt;= 5 &amp;&amp; word.length &gt; 5).sort((a, b) =&gt; b[1] - a[1]).slice(0, 6);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (repeatedWords.length) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const points = Math.min(14, repeatedWords.length * 3);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>score += points;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>findings.push({ label: 'Repetition drag', hits: repeatedWords.length, points, detail: `Repeated terms: ${repeatedWords.map(([word, count]) =&gt; `${word} (${count})`).join(', ')}.` });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>scoreBreakdown.push({ label: 'Repetition', points });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const sentenceLengths = sentences.map(s =&gt; tokenizeWords(s).length);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const spread = stdDev(sentenceLengths);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const meanLen = average(sentenceLengths);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>let cadencePoints = 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (sentences.length &gt;= 4 &amp;&amp; spread &lt; 4.5) cadencePoints += 12;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (meanLen &gt; 28) cadencePoints += 10;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (sentences.length &gt;= 5 &amp;&amp; sentences.filter(len =&gt; len &lt; 8).length === 0) cadencePoints += 6;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (cadencePoints &gt; 0) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>score += cadencePoints;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>findings.push({ label: 'Flat cadence', hits: cadencePoints, points: cadencePoints, detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.` });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>scoreBreakdown.push({ label: 'Cadence', points: cadencePoints });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const passiveHints = (text.match(/\b(is|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (passiveHints &gt;= 2) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>const points = Math.min(10, passiveHints * 2);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>score += points;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>findings.push({ label: 'Passive drift', hits: passiveHints, points, detail: `${passiveHints} passive-looking construction${passiveHints &gt; 1 ? 's' : ''} spotted.` });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>scoreBreakdown.push({ label: 'Passive', points });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const topSentences = sentences</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>.map(sentence =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>let sentenceScore = 0;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>fillerPatterns.forEach(group =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>group.patterns.forEach(pattern =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">              </span>const matches = sentence.match(pattern);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">              </span>if (matches) sentenceScore += matches.length * group.weight;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">            </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>if (tokenizeWords(sentence).length &gt; 28) sentenceScore += 5;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>if (/\b(is|was|were|be|been|being)\s+\w+ed\b/i.test(sentence)) sentenceScore += 4;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">          </span>return { sentence, sentenceScore, rewrite: generateSentenceRewrite(sentence) };</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>})</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>.filter(item =&gt; item.sentenceScore &gt; 0)</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>.sort((a, b) =&gt; b.sentenceScore - a.sentenceScore)</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>.slice(0, 3);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>score = Math.min(100, Math.round(score));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const band = score &gt;= 70 ? 'High risk' : score &gt;= 40 ? 'Moderate risk' : score &gt; 0 ? 'Low risk' : 'Clean read';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const top = findings.sort((a, b) =&gt; b.points - a.points)[0] || null;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const rewrites = findings.slice(0, 5).map(item =&gt; ({ label: item.label, prompt: rewriteTemplates[item.label] || 'Tighten the line. Use sharper nouns, live verbs, and less cushion.' }));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const markdown = [</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'# Wayne AI Tell Scanner Report',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`- Risk band: **${band}**`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`- AI-sheen score: **${score}/100**`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`- Word count: **${words.length}**`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`- Sentence count: **${sentences.length}**`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`- Cadence spread: **${spread.toFixed(1)}**`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'## Score breakdown',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(scoreBreakdown.length ? scoreBreakdown.map(item =&gt; `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'## Top findings',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(findings.length ? findings.map(item =&gt; `- **${item.label}** — ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'## Rewrite marching orders',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(rewrites.length ? rewrites.map(item =&gt; `- **${item.label}** — ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'## Side-by-side rewrites',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(topSentences.length ? topSentences.flatMap((item, index) =&gt; [`### Line ${index + 1}`, `- Original: ${item.sentence}`, `- Rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>].join('\n');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const report = [</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'WAYNE AI TELL SCANNER REPORT',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'--------------------------------',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`Risk band: ${band}`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`AI-sheen score: ${score}/100`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`Word count: ${words.length}`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`Sentence count: ${sentences.length}`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>`Cadence spread: ${spread.toFixed(1)}`,</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'Score breakdown:',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(scoreBreakdown.length ? scoreBreakdown.map(item =&gt; `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'Top findings:',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(findings.length ? findings.map(item =&gt; `- ${item.label}: ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'Rewrite marching orders:',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(rewrites.length ? rewrites.map(item =&gt; `- ${item.label}: ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>'Side-by-side rewrites:',</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>...(topSentences.length ? topSentences.flatMap((item, index) =&gt; [`Line ${index + 1} original: ${item.sentence}`, `Line ${index + 1} rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>].join('\n');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>return { score, band, top, findings, rewrites, report, markdown, wordTotal: words.length, sentenceTotal: sentences.length, spread: spread.toFixed(1), scoreBreakdown, topSentences };</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function renderResults(result) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>latestResult = result;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>scoreValue.textContent = result.score;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>riskBand.textContent = result.band;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>topIssue.textContent = result.top ? result.top.label : 'No dominant issue';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>summaryLine.textContent = result.findings.length ? `${result.findings.length} pattern groups triggered. Start with ${result.top.label.toLowerCase()}.` : 'No major AI-sheen patterns triggered in this pass.';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>meterBar.style.width = `${result.score}%`;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>sentenceCount.textContent = result.sentenceTotal;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>wordCount.textContent = result.wordTotal;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>varianceScore.textContent = result.spread;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>flagCount.textContent = result.findings.length;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>scoreGrid.innerHTML = result.scoreBreakdown.length ? result.scoreBreakdown.map(item =&gt; `&lt;div class="meta-card"&gt;&lt;div class="stat-label"&gt;${item.label}&lt;/div&gt;&lt;div class="stat-value"&gt;${item.points}&lt;/div&gt;&lt;div&gt;points&lt;/div&gt;&lt;/div&gt;`).join('') : '&lt;div class="meta-card"&gt;&lt;div class="stat-label"&gt;Score grid&lt;/div&gt;&lt;div&gt;Nothing tripped in this pass.&lt;/div&gt;&lt;/div&gt;';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>flagList.innerHTML = result.findings.length ? result.findings.map(item =&gt; `&lt;article class="flag"&gt;&lt;strong&gt;${item.label}&lt;/strong&gt;&lt;div&gt;${item.detail}&lt;/div&gt;&lt;small&gt;Penalty: ${item.points} points&lt;/small&gt;&lt;/article&gt;`).join('') : '&lt;article class="flag"&gt;&lt;strong&gt;Clean read&lt;/strong&gt;&lt;div&gt;No major AI-sheen patterns jumped off the page in this pass.&lt;/div&gt;&lt;small&gt;Read it aloud anyway. That is where weak joints get exposed.&lt;/small&gt;&lt;/article&gt;';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>rewriteList.innerHTML = result.rewrites.length ? result.rewrites.map(item =&gt; `&lt;div class="rewrite-item"&gt;&lt;strong&gt;${item.label}&lt;/strong&gt;&lt;div&gt;${item.prompt}&lt;/div&gt;&lt;/div&gt;`).join('') : '&lt;div class="rewrite-item"&gt;&lt;strong&gt;Holding line&lt;/strong&gt;&lt;div&gt;The draft reads clean. The next pass should push argument pressure, not AI-sheen cleanup.&lt;/div&gt;&lt;/div&gt;';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>originalCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) =&gt; `&lt;div class="compare-line"&gt;&lt;strong&gt;Line ${index + 1}&lt;/strong&gt;&lt;div&gt;${item.sentence}&lt;/div&gt;&lt;/div&gt;`).join('') : '&lt;div class="compare-line"&gt;&lt;strong&gt;No hot line found&lt;/strong&gt;&lt;div&gt;No sentence crossed the rewrite threshold in this pass.&lt;/div&gt;&lt;/div&gt;';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>rewriteCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) =&gt; `&lt;div class="compare-line"&gt;&lt;strong&gt;Line ${index + 1}&lt;/strong&gt;&lt;div&gt;${item.rewrite}&lt;/div&gt;&lt;/div&gt;`).join('') : '&lt;div class="compare-line"&gt;&lt;strong&gt;No rewrite needed&lt;/strong&gt;&lt;div&gt;The draft did not cough up a top rewrite target.&lt;/div&gt;&lt;/div&gt;';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>reportBox.textContent = result.report;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>async function ensureLibrary() {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (!fillerPatterns.length) await loadPhraseLibrary();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>async function runScan() {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>await ensureLibrary();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const text = inputText.value.trim();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (!text) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>reportBox.textContent = 'Paste text or upload a file first. The scanner cannot read an empty chamber.';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>return;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>renderResults(analyzeText(text));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>function downloadBlob(content, filename, type) {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const blob = new Blob([content], { type });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const url = URL.createObjectURL(blob);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const a = document.createElement('a');</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>a.href = url;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>a.download = filename;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>a.click();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>URL.revokeObjectURL(url);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>}</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>fileInput.addEventListener('change', async (event) =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const file = event.target.files[0];</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>if (!file) return;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>fileNameChip.textContent = file.name;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const text = await file.text();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>inputText.value = text;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>scanBtn.addEventListener('click', runScan);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>clearBtn.addEventListener('click', () =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>inputText.value = '';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>fileInput.value = '';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>fileNameChip.textContent = 'No file loaded';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>latestResult = null;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', markdown: '# No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0', scoreBreakdown: [], topSentences: [] });</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>sampleBtn.addEventListener('click', async () =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>inputText.value = sampleText;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>fileNameChip.textContent = 'Sample loaded';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>await runScan();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>exportTxtBtn.addEventListener('click', () =&gt; downloadBlob((latestResult?.report || reportBox.textContent), 'wayne-ai-tell-report.txt', 'text/plain;charset=utf-8'));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>exportMdBtn.addEventListener('click', () =&gt; downloadBlob((latestResult?.markdown || '# Wayne AI Tell Scanner Report'), 'wayne-ai-tell-report.md', 'text/markdown;charset=utf-8'));</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>(function initTheme() {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>const root = document.documentElement;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>let current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>root.setAttribute('data-theme', current);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>themeBtn.addEventListener('click', () =&gt; {</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>current = current === 'dark' ? 'light' : 'dark';</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">        </span>root.setAttribute('data-theme', current);</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">      </span>});</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>})();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16; min-height: 21.0px"><span class="s1"></span><br></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">    </span>loadPhraseLibrary();</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;/body&gt;</span></h1>
+<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px 'Helvetica Neue'; color: #1e1c16; -webkit-text-stroke: #1e1c16"><span class="s1">&lt;/html&gt;</span></h1>
 </body>
 </html>

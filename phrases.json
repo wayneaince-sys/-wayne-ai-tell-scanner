@@ -1,0 +1,56 @@
+{
+  "groups": [
+    {
+      "label": "Corporate filler",
+      "weight": 9,
+      "patterns": [
+        "delve",
+        "nuance",
+        "leverage",
+        "robust",
+        "meaningful",
+        "important to note",
+        "in today's world",
+        "moreover",
+        "furthermore"
+      ]
+    },
+    {
+      "label": "Soft transitions",
+      "weight": 8,
+      "patterns": [
+        "however",
+        "additionally",
+        "more importantly",
+        "on the other hand",
+        "in conclusion",
+        "overall"
+      ]
+    },
+    {
+      "label": "Abstraction fog",
+      "weight": 8,
+      "patterns": [
+        "complex landscape",
+        "multifaceted",
+        "various stakeholders",
+        "ongoing conversation",
+        "critical issue",
+        "holistic",
+        "framework"
+      ]
+    },
+    {
+      "label": "Hedging",
+      "weight": 7,
+      "patterns": [
+        "arguably",
+        "perhaps",
+        "may well",
+        "seems to",
+        "it appears that",
+        "in many ways"
+      ]
+    }
+  ]
+}

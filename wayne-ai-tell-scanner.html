@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wayne AI Tell Scanner</title>
+  <meta name="description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing." />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet" />
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --color-bg: #f7f6f2;
+      --color-surface: #f9f8f5;
+      --color-surface-2: #fbfbf9;
+      --color-surface-offset: #f3f0ec;
+      --color-border: #d4d1ca;
+      --color-divider: #dcd9d5;
+      --color-text: #28251d;
+      --color-text-muted: #6d6a63;
+      --color-text-faint: #a9a69f;
+      --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f;
+      --color-primary-hover: #0c4e54;
+      --color-primary-highlight: #cedcd8;
+      --color-warning: #964219;
+      --color-error: #a13544;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --shadow-sm: 0 1px 2px rgba(40,37,29,0.06);
+      --shadow-md: 0 8px 24px rgba(40,37,29,0.09);
+      --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body: 'Satoshi', 'Inter', sans-serif;
+      --font-display: 'Zodiak', Georgia, serif;
+      --content-default: 1180px;
+    }
+
+    [data-theme="dark"] {
+      --color-bg: #171614;
+      --color-surface: #1c1b19;
+      --color-surface-2: #201f1d;
+      --color-surface-offset: #22211f;
+      --color-border: #393836;
+      --color-divider: #262523;
+      --color-text: #d7d4cc;
+      --color-text-muted: #9a968d;
+      --color-text-faint: #6e6a62;
+      --color-text-inverse: #171614;
+      --color-primary: #4f98a3;
+      --color-primary-hover: #68aab4;
+      --color-primary-highlight: rgba(79,152,163,0.16);
+      --color-warning: #c57a4d;
+      --color-error: #dd6974;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
+      --shadow-md: 0 12px 30px rgba(0,0,0,0.34);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.6;
+      background: var(--color-bg);
+      color: var(--color-text);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, textarea, select { font: inherit; }
+    .shell {
+      width: min(calc(100% - 2rem), var(--content-default));
+      margin: 0 auto;
+      padding: var(--space-6) 0 var(--space-12);
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+      padding: var(--space-4) 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    .logo {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--color-primary), var(--color-warning));
+      display: grid;
+      place-items: center;
+      color: white;
+      box-shadow: var(--shadow-sm);
+      flex: 0 0 auto;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: var(--text-lg);
+      line-height: 1.1;
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      justify-content: flex-end;
+    }
+    .btn {
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      padding: 0.82rem 1rem;
+      min-height: 44px;
+      border-radius: var(--radius-md);
+      transition: transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+    .btn-primary:hover { background: var(--color-primary-hover); }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: var(--space-6);
+      margin-bottom: var(--space-8);
+    }
+    .panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+    }
+    .hero-copy {
+      padding: var(--space-8);
+      background:
+        radial-gradient(circle at top left, var(--color-primary-highlight), transparent 45%),
+        var(--color-surface);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0.35rem 0.65rem;
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-4);
+    }
+    .hero h2 {
+      margin: 0 0 var(--space-4);
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      line-height: 0.98;
+      max-width: 14ch;
+    }
+    .hero p {
+      margin: 0 0 var(--space-4);
+      max-width: 60ch;
+      color: var(--color-text-muted);
+    }
+    .hero-points {
+      display: grid;
+      gap: var(--space-3);
+      margin-top: var(--space-5);
+    }
+    .hero-points div {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-divider);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg);
+    }
+    .hero-points strong { display: block; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-3);
+      padding: var(--space-6);
+      align-content: start;
+    }
+    .stat {
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-divider);
+    }
+    .stat-label {
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: var(--space-2);
+    }
+    .stat-value {
+      font-size: var(--text-xl);
+      line-height: 1;
+      font-weight: 700;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+    .editor, .results { padding: var(--space-6); }
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .section-title h3 {
+      margin: 0;
+      font-size: var(--text-lg);
+      line-height: 1.1;
+    }
+    .section-title p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    textarea {
+      width: 100%;
+      min-height: 460px;
+      resize: vertical;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      background: var(--color-surface-2);
+      color: var(--color-text);
+      outline: none;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+    }
+    textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-highlight); }
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .meta-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+    }
+    .meter {
+      height: 12px;
+      width: 100%;
+      background: var(--color-surface-offset);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--color-divider);
+      margin-top: var(--space-3);
+    }
+    .meter-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--color-warning), var(--color-error));
+      transition: width 400ms var(--transition);
+    }
+    .risk-band {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      background: var(--color-primary-highlight);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .list {
+      display: grid;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+    .flag {
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-divider);
+      background: var(--color-surface-2);
+    }
+    .flag strong { display: block; margin-bottom: 0.2rem; }
+    .flag small { color: var(--color-text-muted); }
+    .rewrite-box {
+      margin-top: var(--space-5);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-divider);
+      background: var(--color-surface-2);
+    }
+    .rewrite-box h4, .report h4 { margin: 0 0 var(--space-3); font-size: var(--text-base); }
+    .rewrite-list { display: grid; gap: var(--space-3); }
+    .rewrite-item {
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+    }
+    .footer-note {
+      margin-top: var(--space-6);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    .report {
+      margin-top: var(--space-5);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--color-border);
+      background: var(--color-surface-offset);
+      white-space: pre-wrap;
+    }
+    @media (max-width: 980px) {
+      .hero, .workspace { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      textarea { min-height: 320px; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: min(calc(100% - 1rem), var(--content-default)); }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .meta-grid, .stats { grid-template-columns: 1fr; }
+      .hero-copy, .editor, .results { padding: var(--space-4); }
+      .hero h2 { max-width: 12ch; }
+      .top-actions { width: 100%; justify-content: stretch; }
+      .top-actions .btn { flex: 1 1 auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 18L12 4l8 14" />
+            <path d="M8 14h8" />
+          </svg>
+        </div>
+        <div>
+          <h1>Wayne AI Tell Scanner</h1>
+          <p>Personal-use draft audit tool built to catch AI sheen before it stains your copy.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="sampleBtn" type="button">Load sample</button>
+        <button class="btn" id="themeBtn" type="button" aria-label="Switch theme">Toggle theme</button>
+        <button class="btn btn-primary" id="exportBtn" type="button">Export report</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <article class="panel hero-copy">
+        <div class="eyebrow">Wayne-mode audit</div>
+        <h2>This tool does not chase ghosts. It hunts patterns.</h2>
+        <p>Paste a draft. The scanner reads for repetition, bland transitions, abstraction fog, flat cadence, and the kind of bloodless phrasing that makes honest writing sound machine-washed.</p>
+        <div class="hero-points">
+          <div><span>01</span><div><strong>Flag the sludge.</strong> Catch filler, stacked transitions, and generic posture before publication.</div></div>
+          <div><span>02</span><div><strong>Score the risk.</strong> Get a practical AI-sheen score, not fake certainty about authorship.</div></div>
+          <div><span>03</span><div><strong>Rewrite with teeth.</strong> Turn soft lines into sharper, human sentences with pressure and purpose.</div></div>
+        </div>
+      </article>
+
+      <aside class="panel stats" aria-label="Scanner status cards">
+        <div class="stat">
+          <div class="stat-label">Primary read</div>
+          <div class="stat-value" id="sentenceCount">0</div>
+          <div>Sentences scanned</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Word count</div>
+          <div class="stat-value" id="wordCount">0</div>
+          <div>Total words in current draft</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Cadence spread</div>
+          <div class="stat-value" id="varianceScore">0</div>
+          <div>Sentence-length variation score</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Flag total</div>
+          <div class="stat-value" id="flagCount">0</div>
+          <div>Risk patterns detected</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="workspace">
+      <article class="panel editor">
+        <div class="section-title">
+          <div>
+            <h3>Draft input</h3>
+            <p>Best results come from 150 words or more.</p>
+          </div>
+        </div>
+        <label class="sr-only" for="inputText">Draft text</label>
+        <textarea id="inputText" placeholder="Paste your article, post, op-ed, chapter section, or newsletter draft here..."></textarea>
+        <div class="control-row">
+          <button class="btn btn-primary" id="scanBtn" type="button">Scan draft</button>
+          <button class="btn" id="clearBtn" type="button">Clear</button>
+        </div>
+        <p class="footer-note">Personal-use scanner. Rule-based. Honest about limits. Strong on style triage.</p>
+      </article>
+
+      <article class="panel results">
+        <div class="section-title">
+          <div>
+            <h3>Risk readout</h3>
+            <p>Read the problem areas first, then use the rewrites.</p>
+          </div>
+          <span class="risk-band" id="riskBand">No scan yet</span>
+        </div>
+
+        <div class="meta-grid">
+          <div class="meta-card">
+            <div class="stat-label">AI-sheen score</div>
+            <div class="stat-value" id="scoreValue">0</div>
+            <div class="meter"><div class="meter-bar" id="meterBar"></div></div>
+          </div>
+          <div class="meta-card">
+            <div class="stat-label">Top issue</div>
+            <div id="topIssue">None</div>
+          </div>
+          <div class="meta-card">
+            <div class="stat-label">Reading</div>
+            <div id="summaryLine">Paste text and run a scan.</div>
+          </div>
+        </div>
+
+        <div>
+          <h4>Flags</h4>
+          <div id="flagList" class="list"></div>
+        </div>
+
+        <div class="rewrite-box">
+          <h4>Wayne-mode rewrite prompts</h4>
+          <div id="rewriteList" class="rewrite-list"></div>
+        </div>
+
+        <div class="report" id="reportBox">No report generated yet.</div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const scanBtn = document.getElementById('scanBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const themeBtn = document.getElementById('themeBtn');
+    const scoreValue = document.getElementById('scoreValue');
+    const riskBand = document.getElementById('riskBand');
+    const topIssue = document.getElementById('topIssue');
+    const summaryLine = document.getElementById('summaryLine');
+    const flagList = document.getElementById('flagList');
+    const rewriteList = document.getElementById('rewriteList');
+    const reportBox = document.getElementById('reportBox');
+    const meterBar = document.getElementById('meterBar');
+    const sentenceCount = document.getElementById('sentenceCount');
+    const wordCount = document.getElementById('wordCount');
+    const varianceScore = document.getElementById('varianceScore');
+    const flagCount = document.getElementById('flagCount');
+
+    const fillerPatterns = [
+      { label: 'Corporate filler', weight: 9, patterns: [/\bdelve\b/gi, /\bnuance\b/gi, /\bleverage\b/gi, /\brobust\b/gi, /\bmeaningful\b/gi, /\bimportant to note\b/gi, /\bin today'?s world\b/gi, /\bmoreover\b/gi, /\bfurthermore\b/gi] },
+      { label: 'Soft transitions', weight: 8, patterns: [/\bhowever\b/gi, /\badditionally\b/gi, /\bmore importantly\b/gi, /\bon the other hand\b/gi, /\bin conclusion\b/gi, /\boverall\b/gi] },
+      { label: 'Abstraction fog', weight: 8, patterns: [/\bcomplex landscape\b/gi, /\bmultifaceted\b/gi, /\bvarious stakeholders\b/gi, /\bongoing conversation\b/gi, /\bcritical issue\b/gi, /\bholistic\b/gi, /\bframework\b/gi] },
+      { label: 'Hedging', weight: 7, patterns: [/\barguably\b/gi, /\bperhaps\b/gi, /\bmay well\b/gi, /\bseems to\b/gi, /\bit appears that\b/gi, /\bin many ways\b/gi] }
+    ];
+
+    const rewriteTemplates = {
+      'Corporate filler': 'Replace inflated phrasing with a blunt noun and a hard verb. Example move: "This issue is important" becomes "This issue cuts straight into the spine of the argument."',
+      'Soft transitions': 'Cut the throat-clearing transition. Start the next sentence with the point itself, not the hallway leading to it.',
+      'Abstraction fog': 'Trade concepts for concrete stakes. Name the actor, the action, the damage, and the consequence.',
+      'Hedging': 'If you believe it, plant the flag. Swap maybe-language for a claim you can defend in one line.'
+    };
+
+    const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation.`;
+
+    function tokenizeSentences(text) {
+      return text
+        .replace(/\n+/g, ' ')
+        .match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [];
+    }
+
+    function tokenizeWords(text) {
+      return text.toLowerCase().match(/\b[\w'-]+\b/g) || [];
+    }
+
+    function average(arr) {
+      return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    }
+
+    function stdDev(arr) {
+      if (!arr.length) return 0;
+      const mean = average(arr);
+      const variance = average(arr.map(n => (n - mean) ** 2));
+      return Math.sqrt(variance);
+    }
+
+    function analyzeText(text) {
+      const sentences = tokenizeSentences(text);
+      const words = tokenizeWords(text);
+      const wordFreq = words.reduce((acc, word) => {
+        acc[word] = (acc[word] || 0) + 1;
+        return acc;
+      }, {});
+
+      const findings = [];
+      let score = 0;
+
+      fillerPatterns.forEach(group => {
+        let hits = 0;
+        group.patterns.forEach(pattern => {
+          const matches = text.match(pattern);
+          if (matches) hits += matches.length;
+        });
+        if (hits > 0) {
+          const points = Math.min(group.weight * hits, group.weight * 2);
+          score += points;
+          findings.push({
+            label: group.label,
+            hits,
+            points,
+            detail: `${hits} trigger${hits > 1 ? 's' : ''} caught in this category.`
+          });
+        }
+      });
+
+      const repeatedWords = Object.entries(wordFreq)
+        .filter(([word, count]) => count >= 5 && word.length > 5)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+      if (repeatedWords.length) {
+        const points = Math.min(12, repeatedWords.length * 3);
+        score += points;
+        findings.push({
+          label: 'Repetition drag',
+          hits: repeatedWords.length,
+          points,
+          detail: `Repeated terms: ${repeatedWords.map(([word, count]) => `${word} (${count})`).join(', ')}.`
+        });
+      }
+
+      const sentenceLengths = sentences.map(s => tokenizeWords(s).length);
+      const spread = stdDev(sentenceLengths);
+      const meanLen = average(sentenceLengths);
+      let cadencePoints = 0;
+
+      if (sentences.length >= 4 && spread < 4.5) cadencePoints += 12;
+      if (meanLen > 28) cadencePoints += 10;
+      if (sentences.length >= 5 && sentences.filter(len => len < 8).length === 0) cadencePoints += 6;
+      if (cadencePoints > 0) {
+        score += cadencePoints;
+        findings.push({
+          label: 'Flat cadence',
+          hits: cadencePoints,
+          points: cadencePoints,
+          detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.`
+        });
+      }
+
+      const passiveHints = (text.match(/\b(is|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
+      if (passiveHints >= 2) {
+        const points = Math.min(10, passiveHints * 2);
+        score += points;
+        findings.push({
+          label: 'Passive drift',
+          hits: passiveHints,
+          points,
+          detail: `${passiveHints} passive-looking construction${passiveHints > 1 ? 's' : ''} spotted.`
+        });
+      }
+
+      score = Math.min(100, Math.round(score));
+      const band = score >= 70 ? 'High risk' : score >= 40 ? 'Moderate risk' : score > 0 ? 'Low risk' : 'Clean read';
+      const top = findings.sort((a, b) => b.points - a.points)[0] || null;
+      const rewrites = findings.slice(0, 4).map(item => ({
+        label: item.label,
+        prompt: rewriteTemplates[item.label] || 'Tighten the sentence. Cut hedging, sharpen the subject, and make the action carry weight.'
+      }));
+
+      const report = [
+        'WAYNE AI TELL SCANNER REPORT',
+        '--------------------------------',
+        `Risk band: ${band}`,
+        `AI-sheen score: ${score}/100`,
+        `Word count: ${words.length}`,
+        `Sentence count: ${sentences.length}`,
+        `Cadence spread: ${spread.toFixed(1)}`,
+        '',
+        'Top findings:',
+        ...(findings.length ? findings.map(item => `- ${item.label}: ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
+        '',
+        'Rewrite marching orders:',
+        ...(rewrites.length ? rewrites.map(item => `- ${item.label}: ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.'])
+      ].join('\n');
+
+      return {
+        score,
+        band,
+        top,
+        findings,
+        rewrites,
+        report,
+        wordTotal: words.length,
+        sentenceTotal: sentences.length,
+        spread: spread.toFixed(1)
+      };
+    }
+
+    function renderResults(result) {
+      scoreValue.textContent = result.score;
+      riskBand.textContent = result.band;
+      topIssue.textContent = result.top ? result.top.label : 'No dominant issue';
+      summaryLine.textContent = result.findings.length ? `${result.findings.length} pattern groups triggered. Start with ${result.top.label.toLowerCase()}.` : 'No major AI-sheen patterns triggered in this pass.';
+      meterBar.style.width = `${result.score}%`;
+      sentenceCount.textContent = result.sentenceTotal;
+      wordCount.textContent = result.wordTotal;
+      varianceScore.textContent = result.spread;
+      flagCount.textContent = result.findings.length;
+      flagList.innerHTML = result.findings.length ? result.findings.map(item => `
+        <article class="flag">
+          <strong>${item.label}</strong>
+          <div>${item.detail}</div>
+          <small>Penalty: ${item.points} points</small>
+        </article>
+      `).join('') : '<article class="flag"><strong>Clean read</strong><div>No major AI-sheen patterns jumped off the page in this pass.</div><small>Read it aloud once anyway. That is where the weak joints show.</small></article>';
+
+      rewriteList.innerHTML = result.rewrites.length ? result.rewrites.map(item => `
+        <div class="rewrite-item">
+          <strong>${item.label}</strong>
+          <div>${item.prompt}</div>
+        </div>
+      `).join('') : '<div class="rewrite-item"><strong>Holding line</strong><div>The draft reads clean. Next pass should focus on argument pressure, not AI-sheen cleanup.</div></div>';
+
+      reportBox.textContent = result.report;
+    }
+
+    function runScan() {
+      const text = inputText.value.trim();
+      if (!text) {
+        reportBox.textContent = 'Paste text first. The scanner cannot read an empty chamber.';
+        return;
+      }
+      renderResults(analyzeText(text));
+    }
+
+    scanBtn.addEventListener('click', runScan);
+    clearBtn.addEventListener('click', () => {
+      inputText.value = '';
+      renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0' });
+    });
+    sampleBtn.addEventListener('click', () => {
+      inputText.value = sampleText;
+      runScan();
+    });
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([reportBox.textContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wayne-ai-tell-report.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    (function initTheme() {
+      const root = document.documentElement;
+      let current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.setAttribute('data-theme', current);
+      themeBtn.addEventListener('click', () => {
+        current = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', current);
+      });
+    })();
+  </script>
+</body>
+</html>

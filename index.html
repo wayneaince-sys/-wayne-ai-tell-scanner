@@ -500,12 +500,7 @@
     const varianceScore = document.getElementById('varianceScore');
     const flagCount = document.getElementById('flagCount');
 
-    const fillerPatterns = [
-      { label: 'Corporate filler', weight: 9, patterns: [/\bdelve\b/gi, /\bnuance\b/gi, /\bleverage\b/gi, /\brobust\b/gi, /\bmeaningful\b/gi, /\bimportant to note\b/gi, /\bin today'?s world\b/gi, /\bmoreover\b/gi, /\bfurthermore\b/gi] },
-      { label: 'Soft transitions', weight: 8, patterns: [/\bhowever\b/gi, /\badditionally\b/gi, /\bmore importantly\b/gi, /\bon the other hand\b/gi, /\bin conclusion\b/gi, /\boverall\b/gi] },
-      { label: 'Abstraction fog', weight: 8, patterns: [/\bcomplex landscape\b/gi, /\bmultifaceted\b/gi, /\bvarious stakeholders\b/gi, /\bongoing conversation\b/gi, /\bcritical issue\b/gi, /\bholistic\b/gi, /\bframework\b/gi] },
-      { label: 'Hedging', weight: 7, patterns: [/\barguably\b/gi, /\bperhaps\b/gi, /\bmay well\b/gi, /\bseems to\b/gi, /\bit appears that\b/gi, /\bin many ways\b/gi] }
-    ];
+   let fillerPatterns = [];
 
     const rewriteTemplates = {
       'Corporate filler': 'Replace inflated phrasing with a blunt noun and a hard verb. Example move: "This issue is important" becomes "This issue cuts straight into the spine of the argument."',
@@ -515,7 +510,24 @@
     };
 
     const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation.`;
-
+async function loadPhraseLibrary() {
+  try {
+    const response = await fetch('./phrases.json');
+    if (!response.ok) throw new Error('Could not load phrases.json');
+    const data = await response.json();
+    fillerPatterns = (data.groups || []).map(group => ({
+      label: group.label,
+      weight: group.weight,
+      patterns: (group.patterns || []).map(phrase => {
+        const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`\\b${escaped}\\b`, 'gi');
+      })
+    }));
+  } catch (error) {
+    reportBox.textContent = 'Phrase library failed to load. Check phrases.json and refresh.';
+  }
+}
+    
     function tokenizeSentences(text) {
       return text
         .replace(/\n+/g, ' ')
@@ -686,7 +698,13 @@
       renderResults(analyzeText(text));
     }
 
-    scanBtn.addEventListener('click', runScan);
+ sampleBtn.addEventListener('click', async () => {
+  inputText.value = sampleText;
+  if (!fillerPatterns.length) {
+    await loadPhraseLibrary();
+  }
+  runScan();
+});
     clearBtn.addEventListener('click', () => {
       inputText.value = '';
       renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0' });
@@ -704,6 +722,7 @@
       a.click();
       URL.revokeObjectURL(url);
     });
+    loadPhraseLibrary();
 
     (function initTheme() {
       const root = document.documentElement;

@@ -1,31 +1,21 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wayne AI Tell Scanner</title>
-  <meta name="description" content="Wayne-mode draft scanner for AI sheen, weak rhythm, filler language, and rewrite pressure.">
-  <link rel="preconnect" href="https://api.fontshare.com">
-  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet">
+  <meta name="description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing." />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet" />
   <style>
-    :root,
-    [data-theme="light"] {
+    :root, [data-theme="light"] {
       --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
       --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
       --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
       --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
       --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
       --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
-      --space-1: 0.25rem;
-      --space-2: 0.5rem;
-      --space-3: 0.75rem;
-      --space-4: 1rem;
-      --space-5: 1.25rem;
-      --space-6: 1.5rem;
-      --space-8: 2rem;
-      --space-10: 2.5rem;
-      --space-12: 3rem;
-      --space-16: 4rem;
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
       --color-bg: #f7f6f2;
       --color-surface: #f9f8f5;
       --color-surface-2: #fbfbf9;
@@ -34,6 +24,7 @@
       --color-divider: #dcd9d5;
       --color-text: #28251d;
       --color-text-muted: #6d6a63;
+      --color-text-faint: #a9a69f;
       --color-text-inverse: #f9f8f4;
       --color-primary: #01696f;
       --color-primary-hover: #0c4e54;
@@ -44,14 +35,13 @@
       --radius-md: 0.5rem;
       --radius-lg: 0.75rem;
       --radius-xl: 1rem;
-      --shadow-sm: 0 1px 2px rgba(40, 37, 29, 0.06);
-      --shadow-md: 0 8px 24px rgba(40, 37, 29, 0.09);
+      --shadow-sm: 0 1px 2px rgba(40,37,29,0.06);
+      --shadow-md: 0 8px 24px rgba(40,37,29,0.09);
       --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-      --font-body: "Satoshi", "Inter", sans-serif;
-      --font-display: "Zodiak", Georgia, serif;
+      --font-body: 'Satoshi', 'Inter', sans-serif;
+      --font-display: 'Zodiak', Georgia, serif;
       --content-default: 1240px;
     }
-
     [data-theme="dark"] {
       --color-bg: #171614;
       --color-surface: #1c1b19;
@@ -61,20 +51,17 @@
       --color-divider: #262523;
       --color-text: #d7d4cc;
       --color-text-muted: #9a968d;
+      --color-text-faint: #6e6a62;
       --color-text-inverse: #171614;
       --color-primary: #4f98a3;
       --color-primary-hover: #68aab4;
-      --color-primary-highlight: rgba(79, 152, 163, 0.16);
+      --color-primary-highlight: rgba(79,152,163,0.16);
       --color-warning: #c57a4d;
       --color-error: #dd6974;
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
-      --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.34);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
+      --shadow-md: 0 12px 30px rgba(0,0,0,0.34);
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
@@ -85,116 +72,913 @@
       color: var(--color-text);
       -webkit-font-smoothing: antialiased;
     }
-
-    button,
-    textarea,
-    input {
-      font: inherit;
+    button, textarea, input, select { font: inherit; }
+    .shell { width: min(calc(100% - 2rem), var(--content-default)); margin: 0 auto; padding: var(--space-6) 0 var(--space-12); }
+    .topbar, .section-title, .split-header { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); }
+    .topbar { margin-bottom: var(--space-8); padding: var(--space-4) 0; }
+    .brand { display:flex; align-items:center; gap:var(--space-3); min-width:0; }
+    .logo { width:2.5rem; height:2.5rem; border-radius:var(--radius-md); background:linear-gradient(135deg,var(--color-primary),var(--color-warning)); display:grid; place-items:center; color:white; box-shadow:var(--shadow-sm); }
+    .brand h1 { margin:0; font-size:var(--text-lg); line-height:1.1; font-family:var(--font-display); letter-spacing:-0.02em; }
+    .brand p, .muted, .helper { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+    .top-actions, .control-row { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+    .btn { border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); padding:0.82rem 1rem; min-height:44px; border-radius:var(--radius-md); transition:transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition); cursor:pointer; box-shadow:var(--shadow-sm); }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-text-inverse); }
+    .btn-primary:hover { background:var(--color-primary-hover); }
+    .hero, .workspace { display:grid; gap:var(--space-6); }
+    .hero { grid-template-columns:1.15fr 0.85fr; margin-bottom:var(--space-8); }
+    .workspace { grid-template-columns:1fr 1fr; align-items:start; }
+    .panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-xl); box-shadow:var(--shadow-md); }
+    .hero-copy, .editor, .results { padding:var(--space-6); }
+    .hero-copy { background:radial-gradient(circle at top left, var(--color-primary-highlight), transparent 45%), var(--color-surface); }
+    .eyebrow, .risk-band, .chip { display:inline-flex; align-items:center; gap:var(--space-2); padding:0.35rem 0.65rem; border-radius:999px; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.11em; border:1px solid var(--color-border); }
+    .eyebrow, .chip { background:var(--color-surface-offset); color:var(--color-text-muted); }
+    .risk-band { background:var(--color-primary-highlight); }
+    .hero h2 { margin:0 0 var(--space-4); font-family:var(--font-display); font-size:var(--text-2xl); line-height:0.98; max-width:14ch; }
+    .hero p { margin:0 0 var(--space-4); max-width:60ch; color:var(--color-text-muted); }
+    .hero-points, .list, .rewrite-list, .upload-box { display:grid; gap:var(--space-3); }
+    .hero-points div, .flag, .rewrite-item, .upload-box { background:var(--color-surface-2); border:1px solid var(--color-divider); border-radius:var(--radius-lg); padding:var(--space-4); }
+    .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-3); padding:var(--space-6); align-content:start; }
+    .stat, .meta-card { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); }
+    .stat-label { color:var(--color-text-muted); font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:var(--space-2); }
+    .stat-value { font-size:var(--text-xl); line-height:1; font-weight:700; }
+    textarea { width:100%; min-height:360px; resize:vertical; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:var(--space-4); background:var(--color-surface-2); color:var(--color-text); outline:none; }
+    textarea:focus, input[type="file"]:focus { border-color:var(--color-primary); box-shadow:0 0 0 3px var(--color-primary-highlight); }
+    .meta-grid, .score-grid, .side-by-side { display:grid; gap:var(--space-3); }
+    .meta-grid { grid-template-columns:repeat(3,1fr); margin-bottom:var(--space-5); }
+    .score-grid { grid-template-columns:repeat(4,1fr); margin-bottom:var(--space-5); }
+    .side-by-side { grid-template-columns:1fr 1fr; }
+    .meter { height:12px; width:100%; background:var(--color-surface-offset); border-radius:999px; overflow:hidden; border:1px solid var(--color-divider); margin-top:var(--space-3); }
+    .meter-bar { height:100%; width:0%; background:linear-gradient(90deg, var(--color-warning), var(--color-error)); transition: width 400ms var(--transition); }
+    .report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; }
+    .compare-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); min-height:220px; }
+    .compare-box h4, .report h4, .results h4 { margin:0 0 var(--space-3); font-size:var(--text-base); }
+    .compare-line { padding:var(--space-3); border-radius:var(--radius-md); background:var(--color-surface); border:1px solid var(--color-border); margin-bottom:var(--space-3); }
+    .compare-line strong { display:block; margin-bottom:0.2rem; }
+    .footer-note { margin-top:var(--space-6); color:var(--color-text-muted); font-size:var(--text-sm); }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }
+    @media (max-width: 980px) {
+      .hero, .workspace, .meta-grid, .score-grid, .side-by-side { grid-template-columns:1fr; }
+      .stats { grid-template-columns:repeat(2,1fr); }
     }
-
-    .shell {
-      width: min(calc(100% - 2rem), var(--content-default));
-      margin: 0 auto;
-      padding: var(--space-6) 0 var(--space-12);
+    @media (max-width: 640px) {
+      .shell { width:min(calc(100% - 1rem), var(--content-default)); }
+      .topbar, .section-title, .split-header { flex-direction:column; align-items:flex-start; }
+      .stats { grid-template-columns:1fr; }
+      .hero-copy, .editor, .results { padding:var(--space-4); }
+      .top-actions, .control-row { width:100%; }
+      .top-actions .btn, .control-row .btn { flex:1 1 auto; }
     }
-
-    .topbar,
-    .section-title,
-    .split-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-4);
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18L12 4l8 14" /><path d="M8 14h8" /></svg>
+        </div>
+        <div>
+          <h1>Wayne AI Tell Scanner</h1>
+          <p>Now with file upload, markdown export, sharper scoring, and rewrite pressure.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="sampleBtn" type="button">Load sample</button>
+        <button class="btn" id="themeBtn" type="button">Toggle theme</button>
+        <button class="btn" id="exportTxtBtn" type="button">Export TXT</button>
+        <button class="btn btn-primary" id="exportMdBtn" type="button">Export MD</button>
+      </div>
+    </header>
+    <section class="hero">
+      <article class="panel hero-copy">
+        <div class="eyebrow">Wayne-mode audit</div>
+        <h2>Cut the filler. Break the rhythm. Put some blood back in the sentence.</h2>
+        <p>This pass goes beyond keyword swats. It scores cadence, repetition, hedging, abstraction, passive drift, and soft openers, then shows you what the sentence looked like before and after the pressure hit it.</p>
+        <div class="hero-points">
+          <div><strong>Phrase library expanded.</strong><span class="muted">More trigger families, weighted scoring, cleaner reads.</span></div>
+          <div><strong>Markdown export added.</strong><span class="muted">Take the audit straight into Obsidian, Scrivener, or notes.</span></div>
+          <div><strong>Upload support included.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, or other readable text files.</span></div>
+        </div>
+      </article>
+      <aside class="panel stats">
+        <div class="stat"><div class="stat-label">Sentences</div><div class="stat-value" id="sentenceCount">0</div><div>Current draft read</div></div>
+        <div class="stat"><div class="stat-label">Words</div><div class="stat-value" id="wordCount">0</div><div>Total words scanned</div></div>
+        <div class="stat"><div class="stat-label">Variation</div><div class="stat-value" id="varianceScore">0</div><div>Cadence spread</div></div>
+        <div class="stat"><div class="stat-label">Flags</div><div class="stat-value" id="flagCount">0</div><div>Pattern groups tripped</div></div>
+      </aside>
+    </section>
+    <section class="workspace">
+      <article class="panel editor">
+        <div class="section-title">
+          <div>
+            <h3>Draft input</h3>
+            <p class="helper">Paste text or upload a text-based file.</p>
+          </div>
+          <span class="chip" id="fileNameChip">No file loaded</span>
+        </div>
+        <div class="upload-box">
+          <label for="fileInput"><strong>Upload file</strong></label>
+          <input id="fileInput" type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.rtf" />
+          <div class="helper">Best fit: text-based files. PDFs and DOCX are not wired in this version.</div>
+        </div>
+        <label class="sr-only" for="inputText">Draft text</label>
+        <textarea id="inputText" placeholder="Paste your article, essay, chapter section, op-ed, or newsletter draft here..."></textarea>
+        <div class="control-row" style="margin-top:1rem;">
+          <button class="btn btn-primary" id="scanBtn" type="button">Scan draft</button>
+          <button class="btn" id="clearBtn" type="button">Clear</button>
+        </div>
+        <p class="footer-note">This tool flags AI-sheen risk. It does not prove authorship. It is a style triage blade, not a courtroom witness.</p>
+      </article>
+      <article class="panel results">
+        <div class="section-title">
+          <div>
+            <h3>Risk readout</h3>
+            <p class="helper">Read the weak joints first.</p>
+          </div>
+          <span class="risk-band" id="riskBand">No scan yet</span>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="stat-label">AI-sheen score</div><div class="stat-value" id="scoreValue">0</div><div class="meter"><div class="meter-bar" id="meterBar"></div></div></div>
+          <div class="meta-card"><div class="stat-label">Top issue</div><div id="topIssue">None</div></div>
+          <div class="meta-card"><div class="stat-label">Reading</div><div id="summaryLine">Paste text and run a scan.</div></div>
+        </div>
+        <div class="score-grid" id="scoreGrid"></div>
+        <div>
+          <h4>Flags</h4>
+          <div id="flagList" class="list"></div>
+        </div>
+        <div class="rewrite-box" style="margin-top:1.25rem;">
+          <div class="split-header">
+            <h4 style="margin:0;">Side-by-side rewrite suggestions</h4>
+            <span class="chip">Top 3 lines</span>
+          </div>
+          <div class="side-by-side" style="margin-top:1rem;">
+            <div class="compare-box">
+              <h4>Original lines</h4>
+              <div id="originalCompare"></div>
+            </div>
+            <div class="compare-box">
+              <h4>Wayne-mode rewrites</h4>
+              <div id="rewriteCompare"></div>
+            </div>
+          </div>
+        </div>
+        <div class="rewrite-box" style="margin-top:1.25rem;">
+          <h4>Rewrite marching orders</h4>
+          <div id="rewriteList" class="rewrite-list"></div>
+        </div>
+        <div class="report" id="reportBox">No report generated yet.</div>
+      </article>
+    </section>
+  </main>
+  <script>
+    const inputText = document.getElementById('inputText');
+    const fileInput = document.getElementById('fileInput');
+    const fileNameChip = document.getElementById('fileNameChip');
+    const scanBtn = document.getElementById('scanBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const exportTxtBtn = document.getElementById('exportTxtBtn');
+    const exportMdBtn = document.getElementById('exportMdBtn');
+    const themeBtn = document.getElementById('themeBtn');
+    const scoreValue = document.getElementById('scoreValue');
+    const riskBand = document.getElementById('riskBand');
+    const topIssue = document.getElementById('topIssue');
+    const summaryLine = document.getElementById('summaryLine');
+    const flagList = document.getElementById('flagList');
+    const rewriteList = document.getElementById('rewriteList');
+    const originalCompare = document.getElementById('originalCompare');
+    const rewriteCompare = document.getElementById('rewriteCompare');
+    const reportBox = document.getElementById('reportBox');
+    const meterBar = document.getElementById('meterBar');
+    const sentenceCount = document.getElementById('sentenceCount');
+    const wordCount = document.getElementById('wordCount');
+    const varianceScore = document.getElementById('varianceScore');
+    const flagCount = document.getElementById('flagCount');
+    const scoreGrid = document.getElementById('scoreGrid');
+    let fillerPatterns = [];
+    let latestResult = null;
+    const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;
+    const rewriteTemplates = {
+      'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',
+      'Soft transitions': 'Cut the hallway words. Start with the claim, not the throat-clearing.',
+      'Abstraction fog': 'Name the actor, the action, the damage, and the stake. Fog is not argument.',
+      'Hedging': 'Plant the flag. If the claim matters, stop apologizing for it.',
+      'Repetition drag': 'Break repeated wording with one specific noun and one live verb.',
+      'Flat cadence': 'Mix short hits with one longer sentence. Uniform rhythm is where lifeless copy hides.',
+      'Passive drift': 'Put the actor in the subject position and make the verb move.',
+      'Soft opener': 'Open with conflict, fact, or consequence. Stop easing into the point like you are knocking on your own door.'
+    };
+    function tokenizeSentences(text) {
+      return text.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [];
     }
-
-    .topbar {
-      margin-bottom: var(--space-8);
-      padding: var(--space-4) 0;
+    function tokenizeWords(text) {
+      return text.toLowerCase().match(/\b[\w'-]+\b/g) || [];
     }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      min-width: 0;
+    function average(arr) {
+      return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     }
-
-    .logo {
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--color-primary), var(--color-warning));
-      display: grid;
-      place-items: center;
-      color: white;
-      box-shadow: var(--shadow-sm);
+    function stdDev(arr) {
+      if (!arr.length) return 0;
+      const mean = average(arr);
+      const variance = average(arr.map(n => (n - mean) ** 2));
+      return Math.sqrt(variance);
     }
-
-    .brand h1 {
+    function escapeRegex(phrase) {
+      return phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    async function loadPhraseLibrary() {
+      try {
+        const response = await fetch('./phrases.json');
+        if (!response.ok) throw new Error('Could not load phrases.json');
+        const data = await response.json();
+        const builtInGroups = [
+          { label: 'Corporate filler', weight: 9, patterns: ['delve','nuance','leverage','robust','meaningful','important to note',"in today's world",'furthermore','moreover','best-in-class','powerful solution'] },
+          { label: 'Soft transitions', weight: 8, patterns: ['however','additionally','more importantly','on the other hand','in conclusion','overall','that said','more specifically'] },
+          { label: 'Abstraction fog', weight: 8, patterns: ['complex landscape','multifaceted','various stakeholders','ongoing conversation','critical issue','holistic','framework','ecosystem','meaning-making'] },
+          { label: 'Hedging', weight: 7, patterns: ['arguably','perhaps','may well','seems to','it appears that','in many ways','could potentially'] },
+          { label: 'Soft opener', weight: 6, patterns: ['it is important to note','it is worth noting','when we think about','there are many ways','in a world where'] }
+        ];
+        const remoteGroups = Array.isArray(data.groups) ? data.groups : [];
+        const merged = [...builtInGroups, ...remoteGroups];
+        const deduped = new Map();
+        merged.forEach(group => {
+          if (!deduped.has(group.label)) deduped.set(group.label, { label: group.label, weight: group.weight, patterns: [] });
+          deduped.get(group.label).patterns.push(...(group.patterns || []));
+        });
+        fillerPatterns = Array.from(deduped.values()).map(group => ({
+          label: group.label,
+          weight: group.weight,
+          patterns: [...new Set(group.patterns)].map(phrase => new RegExp(`\\b${escapeRegex(phrase)}\\b`, 'gi'))
+        }));
+      } catch (error) {
+        reportBox.textContent = 'Phrase library failed to load. Check phrases.json and refresh.';
+      }
+    }
+    function generateSentenceRewrite(sentence) {
+      let revised = sentence.trim();
+      revised = revised.replace(/\b(In today's world|Overall|Furthermore|Additionally|However|In conclusion|It is important to note that|It is worth noting that)\b[,:]?\s*/gi, '');
+      revised = revised.replace(/\b(arguably|perhaps|may well|seems to|it appears that|in many ways)\b\s*/gi, '');
+      revised = revised.replace(/\b(multifaceted|holistic|robust|meaningful|complex)\b/gi, match => ({multifaceted:'layered', holistic:'whole', robust:'strong', meaningful:'real', complex:'hard'}[match.toLowerCase()] || match));
+      revised = revised.replace(/\bframework\b/gi, 'structure');
+      revised = revised.replace(/\bconversation\b/gi, 'fight');
+      revised = revised.replace(/\bstakeholders\b/gi, 'players');
+      revised = revised.replace(/\s{2,}/g, ' ').trim();
+      if (revised && !/[.!?]$/.test(revised)) revised += '.';
+      if (revised.length && revised[0] === revised[0].toLowerCase()) revised = revised[0].toUpperCase() + revised.slice(1);
+      return revised || sentence;
+    }
+    function analyzeText(text) {
+      const sentences = tokenizeSentences(text);
+      const words = tokenizeWords(text);
+      const wordFreq = words.reduce((acc, word) => { acc[word] = (acc[word] || 0) + 1; return acc; }, {});
+      const findings = [];
+      const scoreBreakdown = [];
+      let score = 0;
+      fillerPatterns.forEach(group => {
+        let hits = 0;
+        group.patterns.forEach(pattern => {
+          const matches = text.match(pattern);
+          if (matches) hits += matches.length;
+        });
+        if (hits > 0) {
+          const points = Math.min(group.weight * hits, group.weight * 3);
+          score += points;
+          findings.push({ label: group.label, hits, points, detail: `${hits} trigger${hits > 1 ? 's' : ''} caught in this category.` });
+          scoreBreakdown.push({ label: group.label, points });
+        }
+      });
+      const repeatedWords = Object.entries(wordFreq).filter(([word, count]) => count >= 5 && word.length > 5).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      if (repeatedWords.length) {
+        const points = Math.min(14, repeatedWords.length * 3);
+        score += points;
+        findings.push({ label: 'Repetition drag', hits: repeatedWords.length, points, detail: `Repeated terms: ${repeatedWords.map(([word, count]) => `${word} (${count})`).join(', ')}.` });
+        scoreBreakdown.push({ label: 'Repetition', points });
+      }
+      const sentenceLengths = sentences.map(s => tokenizeWords(s).length);
+      const spread = stdDev(sentenceLengths);
+      const meanLen = average(sentenceLengths);
+      let cadencePoints = 0;
+      if (sentences.length >= 4 && spread < 4.5) cadencePoints += 12;
+      if (meanLen > 28) cadencePoints += 10;
+      if (sentences.length >= 5 && sentences.filter(len => len < 8).length === 0) cadencePoints += 6;
+      if (cadencePoints > 0) {
+        score += cadencePoints;
+        findings.push({ label: 'Flat cadence', hits: cadencePoints, points: cadencePoints, detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.` });
+        scoreBreakdown.push({ label: 'Cadence', points: cadencePoints });
+      }
+      const passiveHints = (text.match(/\b(is|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
+      if (passiveHints >= 2) {
+        const points = Math.min(10, passiveHints * 2);
+        score += points;
+        findings.push({ label: 'Passive drift', hits: passiveHints, points, detail: `${passiveHints} passive-looking construction${passiveHints > 1 ? 's' : ''} spotted.` });
+        scoreBreakdown.push({ label: 'Passive', points });
+      }
+      const topSentences = sentences
+        .map(sentence => {
+          let sentenceScore = 0;
+          fillerPatterns.forEach(group => {
+            group.patterns.forEach(pattern => {
+              const matches = sentence.match(pattern);
+              if (matches) sentenceScore += matches.length * group.weight;
+            });
+          });
+          if (tokenizeWords(sentence).length > 28) sentenceScore += 5;
+          if (/\b(is|was|were|be|been|being)\s+\w+ed\b/i.test(sentence)) sentenceScore += 4;
+          return { sentence, sentenceScore, rewrite: generateSentenceRewrite(sentence) };
+        })
+        .filter(item => item.sentenceScore > 0)
+        .sort((a, b) => b.sentenceScore - a.sentenceScore)
+        .slice(0, 3);
+      score = Math.min(100, Math.round(score));
+      const band = score >= 70 ? 'High risk' : score >= 40 ? 'Moderate risk' : score > 0 ? 'Low risk' : 'Clean read';
+      const top = findings.sort((a, b) => b.points - a.points)[0] || null;
+      const rewrites = findings.slice(0, 5).map(item => ({ label: item.label, prompt: rewriteTemplates[item.label] || 'Tighten the line. Use sharper nouns, live verbs, and less cushion.' }));
+      const markdown = [
+        '# Wayne AI Tell Scanner Report',
+        '',
+        `- Risk band: **${band}**`,
+        `- AI-sheen score: **${score}/100**`,
+        `- Word count: **${words.length}**`,
+        `- Sentence count: **${sentences.length}**`,
+        `- Cadence spread: **${spread.toFixed(1)}**`,
+        '',
+        '## Score breakdown',
+        ...(scoreBreakdown.length ? scoreBreakdown.map(item => `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),
+        '',
+        '## Top findings',
+        ...(findings.length ? findings.map(item => `- **${item.label}** — ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
+        '',
+        '## Rewrite marching orders',
+        ...(rewrites.length ? rewrites.map(item => `- **${item.label}** — ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),
+        '',
+        '## Side-by-side rewrites',
+        ...(topSentences.length ? topSentences.flatMap((item, index) => [`### Line ${index + 1}`, `- Original: ${item.sentence}`, `- Rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])
+      ].join('\n');
+      const report = [
+        'WAYNE AI TELL SCANNER REPORT',
+        '--------------------------------',
+        `Risk band: ${band}`,
+        `AI-sheen score: ${score}/100`,
+        `Word count: ${words.length}`,
+        `Sentence count: ${sentences.length}`,
+        `Cadence spread: ${spread.toFixed(1)}`,
+        '',
+        'Score breakdown:',
+        ...(scoreBreakdown.length ? scoreBreakdown.map(item => `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),
+        '',
+        'Top findings:',
+        ...(findings.length ? findings.map(item => `- ${item.label}: ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
+        '',
+        'Rewrite marching orders:',
+        ...(rewrites.length ? rewrites.map(item => `- ${item.label}: ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),
+        '',
+        'Side-by-side rewrites:',
+        ...(topSentences.length ? topSentences.flatMap((item, index) => [`Line ${index + 1} original: ${item.sentence}`, `Line ${index + 1} rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])
+      ].join('\n');
+      return { score, band, top, findings, rewrites, report, markdown, wordTotal: words.length, sentenceTotal: sentences.length, spread: spread.toFixed(1), scoreBreakdown, topSentences };
+    }
+    function renderResults(result) {
+      latestResult = result;
+      scoreValue.textContent = result.score;
+      riskBand.textContent = result.band;
+      topIssue.textContent = result.top ? result.top.label : 'No dominant issue';
+      summaryLine.textContent = result.findings.length ? `${result.findings.length} pattern groups triggered. Start with ${result.top.label.toLowerCase()}.` : 'No major AI-sheen patterns triggered in this pass.';
+      meterBar.style.width = `${result.score}%`;
+      sentenceCount.textContent = result.sentenceTotal;
+      wordCount.textContent = result.wordTotal;
+      varianceScore.textContent = result.spread;
+      flagCount.textContent = result.findings.length;
+      scoreGrid.innerHTML = result.scoreBreakdown.length ? result.scoreBreakdown.map(item => `<div class="meta-card"><div class="stat-label">${item.label}</div><div class="stat-value">${item.points}</div><div>points</div></div>`).join('') : '<div class="meta-card"><div class="stat-label">Score grid</div><div>Nothing tripped in this pass.</div></div>';
+      flagList.innerHTML = result.findings.length ? result.findings.map(item => `<article class="flag"><strong>${item.label}</strong><div>${item.detail}</div><small>Penalty: ${item.points} points</small></article>`).join('') : '<article class="flag"><strong>Clean read</strong><div>No major AI-sheen patterns jumped off the page in this pass.</div><small>Read it aloud anyway. That is where weak joints get exposed.</small></article>';
+      rewriteList.innerHTML = result.rewrites.length ? result.rewrites.map(item => `<div class="rewrite-item"><strong>${item.label}</strong><div>${item.prompt}</div></div>`).join('') : '<div class="rewrite-item"><strong>Holding line</strong><div>The draft reads clean. The next pass should push argument pressure, not AI-sheen cleanup.</div></div>';
+      originalCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${item.sentence}</div></div>`).join('') : '<div class="compare-line"><strong>No hot line found</strong><div>No sentence crossed the rewrite threshold in this pass.</div></div>';
+      rewriteCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${item.rewrite}</div></div>`).join('') : '<div class="compare-line"><strong>No rewrite needed</strong><div>The draft did not cough up a top rewrite target.</div></div>';
+      reportBox.textContent = result.report;
+    }
+    async function ensureLibrary() {
+      if (!fillerPatterns.length) await loadPhraseLibrary();
+    }
+    async function runScan() {
+      await ensureLibrary();
+      const text = inputText.value.trim();
+      if (!text) {
+        reportBox.textContent = 'Paste text or upload a file first. The scanner cannot read an empty chamber.';
+        return;
+      }
+      renderResults(analyzeText(text));
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wayne AI Tell Scanner</title>
+  <meta name="description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing." />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet" />
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --color-bg: #f7f6f2;
+      --color-surface: #f9f8f5;
+      --color-surface-2: #fbfbf9;
+      --color-surface-offset: #f3f0ec;
+      --color-border: #d4d1ca;
+      --color-divider: #dcd9d5;
+      --color-text: #28251d;
+      --color-text-muted: #6d6a63;
+      --color-text-faint: #a9a69f;
+      --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f;
+      --color-primary-hover: #0c4e54;
+      --color-primary-highlight: #cedcd8;
+      --color-warning: #964219;
+      --color-error: #a13544;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --shadow-sm: 0 1px 2px rgba(40,37,29,0.06);
+      --shadow-md: 0 8px 24px rgba(40,37,29,0.09);
+      --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body: 'Satoshi', 'Inter', sans-serif;
+      --font-display: 'Zodiak', Georgia, serif;
+      --content-default: 1240px;
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614;
+      --color-surface: #1c1b19;
+      --color-surface-2: #201f1d;
+      --color-surface-offset: #22211f;
+      --color-border: #393836;
+      --color-divider: #262523;
+      --color-text: #d7d4cc;
+      --color-text-muted: #9a968d;
+      --color-text-faint: #6e6a62;
+      --color-text-inverse: #171614;
+      --color-primary: #4f98a3;
+      --color-primary-hover: #68aab4;
+      --color-primary-highlight: rgba(79,152,163,0.16);
+      --color-warning: #c57a4d;
+      --color-error: #dd6974;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
+      --shadow-md: 0 12px 30px rgba(0,0,0,0.34);
+    }
+    * { box-sizing: border-box; }
+    body {
       margin: 0;
-      font-size: var(--text-lg);
-      line-height: 1.1;
-      font-family: var(--font-display);
-      letter-spacing: -0.02em;
-    }
-
-    .brand p,
-    .helper,
-    .muted {
-      margin: 0;
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-    }
-
-    .top-actions,
-    .control-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-    }
-
-    .btn {
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
+      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.6;
+      background: var(--color-bg);
       color: var(--color-text);
-      padding: 0.82rem 1rem;
-      min-height: 44px;
-      border-radius: var(--radius-md);
-      transition: transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
+      -webkit-font-smoothing: antialiased;
     }
-
-    .btn:hover {
-      transform: translateY(-1px);
+    button, textarea, input, select { font: inherit; }
+    .shell { width: min(calc(100% - 2rem), var(--content-default)); margin: 0 auto; padding: var(--space-6) 0 var(--space-12); }
+    .topbar, .section-title, .split-header { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); }
+    .topbar { margin-bottom: var(--space-8); padding: var(--space-4) 0; }
+    .brand { display:flex; align-items:center; gap:var(--space-3); min-width:0; }
+    .logo { width:2.5rem; height:2.5rem; border-radius:var(--radius-md); background:linear-gradient(135deg,var(--color-primary),var(--color-warning)); display:grid; place-items:center; color:white; box-shadow:var(--shadow-sm); }
+    .brand h1 { margin:0; font-size:var(--text-lg); line-height:1.1; font-family:var(--font-display); letter-spacing:-0.02em; }
+    .brand p, .muted, .helper { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+    .top-actions, .control-row { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+    .btn { border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); padding:0.82rem 1rem; min-height:44px; border-radius:var(--radius-md); transition:transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition); cursor:pointer; box-shadow:var(--shadow-sm); }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-text-inverse); }
+    .btn-primary:hover { background:var(--color-primary-hover); }
+    .hero, .workspace { display:grid; gap:var(--space-6); }
+    .hero { grid-template-columns:1.15fr 0.85fr; margin-bottom:var(--space-8); }
+    .workspace { grid-template-columns:1fr 1fr; align-items:start; }
+    .panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-xl); box-shadow:var(--shadow-md); }
+    .hero-copy, .editor, .results { padding:var(--space-6); }
+    .hero-copy { background:radial-gradient(circle at top left, var(--color-primary-highlight), transparent 45%), var(--color-surface); }
+    .eyebrow, .risk-band, .chip { display:inline-flex; align-items:center; gap:var(--space-2); padding:0.35rem 0.65rem; border-radius:999px; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.11em; border:1px solid var(--color-border); }
+    .eyebrow, .chip { background:var(--color-surface-offset); color:var(--color-text-muted); }
+    .risk-band { background:var(--color-primary-highlight); }
+    .hero h2 { margin:0 0 var(--space-4); font-family:var(--font-display); font-size:var(--text-2xl); line-height:0.98; max-width:14ch; }
+    .hero p { margin:0 0 var(--space-4); max-width:60ch; color:var(--color-text-muted); }
+    .hero-points, .list, .rewrite-list, .upload-box { display:grid; gap:var(--space-3); }
+    .hero-points div, .flag, .rewrite-item, .upload-box { background:var(--color-surface-2); border:1px solid var(--color-divider); border-radius:var(--radius-lg); padding:var(--space-4); }
+    .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-3); padding:var(--space-6); align-content:start; }
+    .stat, .meta-card { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); }
+    .stat-label { color:var(--color-text-muted); font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:var(--space-2); }
+    .stat-value { font-size:var(--text-xl); line-height:1; font-weight:700; }
+    textarea { width:100%; min-height:360px; resize:vertical; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:var(--space-4); background:var(--color-surface-2); color:var(--color-text); outline:none; }
+    textarea:focus, input[type="file"]:focus { border-color:var(--color-primary); box-shadow:0 0 0 3px var(--color-primary-highlight); }
+    .meta-grid, .score-grid, .side-by-side { display:grid; gap:var(--space-3); }
+    .meta-grid { grid-template-columns:repeat(3,1fr); margin-bottom:var(--space-5); }
+    .score-grid { grid-template-columns:repeat(4,1fr); margin-bottom:var(--space-5); }
+    .side-by-side { grid-template-columns:1fr 1fr; }
+    .meter { height:12px; width:100%; background:var(--color-surface-offset); border-radius:999px; overflow:hidden; border:1px solid var(--color-divider); margin-top:var(--space-3); }
+    .meter-bar { height:100%; width:0%; background:linear-gradient(90deg, var(--color-warning), var(--color-error)); transition: width 400ms var(--transition); }
+    .report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; }
+    .compare-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); min-height:220px; }
+    .compare-box h4, .report h4, .results h4 { margin:0 0 var(--space-3); font-size:var(--text-base); }
+    .compare-line { padding:var(--space-3); border-radius:var(--radius-md); background:var(--color-surface); border:1px solid var(--color-border); margin-bottom:var(--space-3); }
+    .compare-line strong { display:block; margin-bottom:0.2rem; }
+    .footer-note { margin-top:var(--space-6); color:var(--color-text-muted); font-size:var(--text-sm); }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }
+    @media (max-width: 980px) {
+      .hero, .workspace, .meta-grid, .score-grid, .side-by-side { grid-template-columns:1fr; }
+      .stats { grid-template-columns:repeat(2,1fr); }
     }
-
-    .btn-primary {
-      background: var(--color-primary);
-      border-color: var(--color-primary);
-      color: var(--color-text-inverse);
+    @media (max-width: 640px) {
+      .shell { width:min(calc(100% - 1rem), var(--content-default)); }
+      .topbar, .section-title, .split-header { flex-direction:column; align-items:flex-start; }
+      .stats { grid-template-columns:1fr; }
+      .hero-copy, .editor, .results { padding:var(--space-4); }
+      .top-actions, .control-row { width:100%; }
+      .top-actions .btn, .control-row .btn { flex:1 1 auto; }
     }
-
-    .btn-primary:hover {
-      background: var(--color-primary-hover);
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18L12 4l8 14" /><path d="M8 14h8" /></svg>
+        </div>
+        <div>
+          <h1>Wayne AI Tell Scanner</h1>
+          <p>Now with file upload, markdown export, sharper scoring, and rewrite pressure.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="sampleBtn" type="button">Load sample</button>
+        <button class="btn" id="themeBtn" type="button">Toggle theme</button>
+        <button class="btn" id="exportTxtBtn" type="button">Export TXT</button>
+        <button class="btn btn-primary" id="exportMdBtn" type="button">Export MD</button>
+      </div>
+    </header>
+    <section class="hero">
+      <article class="panel hero-copy">
+        <div class="eyebrow">Wayne-mode audit</div>
+        <h2>Cut the filler. Break the rhythm. Put some blood back in the sentence.</h2>
+        <p>This pass goes beyond keyword swats. It scores cadence, repetition, hedging, abstraction, passive drift, and soft openers, then shows you what the sentence looked like before and after the pressure hit it.</p>
+        <div class="hero-points">
+          <div><strong>Phrase library expanded.</strong><span class="muted">More trigger families, weighted scoring, cleaner reads.</span></div>
+          <div><strong>Markdown export added.</strong><span class="muted">Take the audit straight into Obsidian, Scrivener, or notes.</span></div>
+          <div><strong>Upload support included.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, or other readable text files.</span></div>
+        </div>
+      </article>
+      <aside class="panel stats">
+        <div class="stat"><div class="stat-label">Sentences</div><div class="stat-value" id="sentenceCount">0</div><div>Current draft read</div></div>
+        <div class="stat"><div class="stat-label">Words</div><div class="stat-value" id="wordCount">0</div><div>Total words scanned</div></div>
+        <div class="stat"><div class="stat-label">Variation</div><div class="stat-value" id="varianceScore">0</div><div>Cadence spread</div></div>
+        <div class="stat"><div class="stat-label">Flags</div><div class="stat-value" id="flagCount">0</div><div>Pattern groups tripped</div></div>
+      </aside>
+    </section>
+    <section class="workspace">
+      <article class="panel editor">
+        <div class="section-title">
+          <div>
+            <h3>Draft input</h3>
+            <p class="helper">Paste text or upload a text-based file.</p>
+          </div>
+          <span class="chip" id="fileNameChip">No file loaded</span>
+        </div>
+        <div class="upload-box">
+          <label for="fileInput"><strong>Upload file</strong></label>
+          <input id="fileInput" type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.rtf" />
+          <div class="helper">Best fit: text-based files. PDFs and DOCX are not wired in this version.</div>
+        </div>
+        <label class="sr-only" for="inputText">Draft text</label>
+        <textarea id="inputText" placeholder="Paste your article, essay, chapter section, op-ed, or newsletter draft here..."></textarea>
+        <div class="control-row" style="margin-top:1rem;">
+          <button class="btn btn-primary" id="scanBtn" type="button">Scan draft</button>
+          <button class="btn" id="clearBtn" type="button">Clear</button>
+        </div>
+        <p class="footer-note">This tool flags AI-sheen risk. It does not prove authorship. It is a style triage blade, not a courtroom witness.</p>
+      </article>
+      <article class="panel results">
+        <div class="section-title">
+          <div>
+            <h3>Risk readout</h3>
+            <p class="helper">Read the weak joints first.</p>
+          </div>
+          <span class="risk-band" id="riskBand">No scan yet</span>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="stat-label">AI-sheen score</div><div class="stat-value" id="scoreValue">0</div><div class="meter"><div class="meter-bar" id="meterBar"></div></div></div>
+          <div class="meta-card"><div class="stat-label">Top issue</div><div id="topIssue">None</div></div>
+          <div class="meta-card"><div class="stat-label">Reading</div><div id="summaryLine">Paste text and run a scan.</div></div>
+        </div>
+        <div class="score-grid" id="scoreGrid"></div>
+        <div>
+          <h4>Flags</h4>
+          <div id="flagList" class="list"></div>
+        </div>
+        <div class="rewrite-box" style="margin-top:1.25rem;">
+          <div class="split-header">
+            <h4 style="margin:0;">Side-by-side rewrite suggestions</h4>
+            <span class="chip">Top 3 lines</span>
+          </div>
+          <div class="side-by-side" style="margin-top:1rem;">
+            <div class="compare-box">
+              <h4>Original lines</h4>
+              <div id="originalCompare"></div>
+            </div>
+            <div class="compare-box">
+              <h4>Wayne-mode rewrites</h4>
+              <div id="rewriteCompare"></div>
+            </div>
+          </div>
+        </div>
+        <div class="rewrite-box" style="margin-top:1.25rem;">
+          <h4>Rewrite marching orders</h4>
+          <div id="rewriteList" class="rewrite-list"></div>
+        </div>
+        <div class="report" id="reportBox">No report generated yet.</div>
+      </article>
+    </section>
+  </main>
+  <script>
+    const inputText = document.getElementById('inputText');
+    const fileInput = document.getElementById('fileInput');
+    const fileNameChip = document.getElementById('fileNameChip');
+    const scanBtn = document.getElementById('scanBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const exportTxtBtn = document.getElementById('exportTxtBtn');
+    const exportMdBtn = document.getElementById('exportMdBtn');
+    const themeBtn = document.getElementById('themeBtn');
+    const scoreValue = document.getElementById('scoreValue');
+    const riskBand = document.getElementById('riskBand');
+    const topIssue = document.getElementById('topIssue');
+    const summaryLine = document.getElementById('summaryLine');
+    const flagList = document.getElementById('flagList');
+    const rewriteList = document.getElementById('rewriteList');
+    const originalCompare = document.getElementById('originalCompare');
+    const rewriteCompare = document.getElementById('rewriteCompare');
+    const reportBox = document.getElementById('reportBox');
+    const meterBar = document.getElementById('meterBar');
+    const sentenceCount = document.getElementById('sentenceCount');
+    const wordCount = document.getElementById('wordCount');
+    const varianceScore = document.getElementById('varianceScore');
+    const flagCount = document.getElementById('flagCount');
+    const scoreGrid = document.getElementById('scoreGrid');
+    let fillerPatterns = [];
+    let latestResult = null;
+    const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;
+    const rewriteTemplates = {
+      'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',
+      'Soft transitions': 'Cut the hallway words. Start with the claim, not the throat-clearing.',
+      'Abstraction fog': 'Name the actor, the action, the damage, and the stake. Fog is not argument.',
+      'Hedging': 'Plant the flag. If the claim matters, stop apologizing for it.',
+      'Repetition drag': 'Break repeated wording with one specific noun and one live verb.',
+      'Flat cadence': 'Mix short hits with one longer sentence. Uniform rhythm is where lifeless copy hides.',
+      'Passive drift': 'Put the actor in the subject position and make the verb move.',
+      'Soft opener': 'Open with conflict, fact, or consequence. Stop easing into the point like you are knocking on your own door.'
+    };
+    function tokenizeSentences(text) {
+      return text.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [];
     }
-
-    .hero,
-    .workspace {
-      display: grid;
-      gap: var(--space-6);
+    function tokenizeWords(text) {
+      return text.toLowerCase().match(/\b[\w'-]+\b/g) || [];
     }
-
-    .hero {
-      grid-template-columns: 1.15fr 0.85fr;
-      margin-bottom: var(--space-8);
+    function average(arr) {
+      return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     }
-
-    .workspace {
-      grid-template-columns: 1fr 1fr;
-      align-items: start;
+    function stdDev(arr) {
+      if (!arr.length) return 0;
+      const mean = average(arr);
+      const variance = average(arr.map(n => (n - mean) ** 2));
+      return Math.sqrt(variance);
     }
-
-    .panel {
-      background: var(--color-surface);
-      
+    function escapeRegex(phrase) {
+      return phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    async function loadPhraseLibrary() {
+      try {
+        const response = await fetch('./phrases.json');
+        if (!response.ok) throw new Error('Could not load phrases.json');
+        const data = await response.json();
+        const builtInGroups = [
+          { label: 'Corporate filler', weight: 9, patterns: ['delve','nuance','leverage','robust','meaningful','important to note',"in today's world",'furthermore','moreover','best-in-class','powerful solution'] },
+          { label: 'Soft transitions', weight: 8, patterns: ['however','additionally','more importantly','on the other hand','in conclusion','overall','that said','more specifically'] },
+          { label: 'Abstraction fog', weight: 8, patterns: ['complex landscape','multifaceted','various stakeholders','ongoing conversation','critical issue','holistic','framework','ecosystem','meaning-making'] },
+          { label: 'Hedging', weight: 7, patterns: ['arguably','perhaps','may well','seems to','it appears that','in many ways','could potentially'] },
+          { label: 'Soft opener', weight: 6, patterns: ['it is important to note','it is worth noting','when we think about','there are many ways','in a world where'] }
+        ];
+        const remoteGroups = Array.isArray(data.groups) ? data.groups : [];
+        const merged = [...builtInGroups, ...remoteGroups];
+        const deduped = new Map();
+        merged.forEach(group => {
+          if (!deduped.has(group.label)) deduped.set(group.label, { label: group.label, weight: group.weight, patterns: [] });
+          deduped.get(group.label).patterns.push(...(group.patterns || []));
+        });
+        fillerPatterns = Array.from(deduped.values()).map(group => ({
+          label: group.label,
+          weight: group.weight,
+          patterns: [...new Set(group.patterns)].map(phrase => new RegExp(`\\b${escapeRegex(phrase)}\\b`, 'gi'))
+        }));
+      } catch (error) {
+        reportBox.textContent = 'Phrase library failed to load. Check phrases.json and refresh.';
+      }
+    }
+    function generateSentenceRewrite(sentence) {
+      let revised = sentence.trim();
+      revised = revised.replace(/\b(In today's world|Overall|Furthermore|Additionally|However|In conclusion|It is important to note that|It is worth noting that)\b[,:]?\s*/gi, '');
+      revised = revised.replace(/\b(arguably|perhaps|may well|seems to|it appears that|in many ways)\b\s*/gi, '');
+      revised = revised.replace(/\b(multifaceted|holistic|robust|meaningful|complex)\b/gi, match => ({multifaceted:'layered', holistic:'whole', robust:'strong', meaningful:'real', complex:'hard'}[match.toLowerCase()] || match));
+      revised = revised.replace(/\bframework\b/gi, 'structure');
+      revised = revised.replace(/\bconversation\b/gi, 'fight');
+      revised = revised.replace(/\bstakeholders\b/gi, 'players');
+      revised = revised.replace(/\s{2,}/g, ' ').trim();
+      if (revised && !/[.!?]$/.test(revised)) revised += '.';
+      if (revised.length && revised[0] === revised[0].toLowerCase()) revised = revised[0].toUpperCase() + revised.slice(1);
+      return revised || sentence;
+    }
+    function analyzeText(text) {
+      const sentences = tokenizeSentences(text);
+      const words = tokenizeWords(text);
+      const wordFreq = words.reduce((acc, word) => { acc[word] = (acc[word] || 0) + 1; return acc; }, {});
+      const findings = [];
+      const scoreBreakdown = [];
+      let score = 0;
+      fillerPatterns.forEach(group => {
+        let hits = 0;
+        group.patterns.forEach(pattern => {
+          const matches = text.match(pattern);
+          if (matches) hits += matches.length;
+        });
+        if (hits > 0) {
+          const points = Math.min(group.weight * hits, group.weight * 3);
+          score += points;
+          findings.push({ label: group.label, hits, points, detail: `${hits} trigger${hits > 1 ? 's' : ''} caught in this category.` });
+          scoreBreakdown.push({ label: group.label, points });
+        }
+      });
+      const repeatedWords = Object.entries(wordFreq).filter(([word, count]) => count >= 5 && word.length > 5).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      if (repeatedWords.length) {
+        const points = Math.min(14, repeatedWords.length * 3);
+        score += points;
+        findings.push({ label: 'Repetition drag', hits: repeatedWords.length, points, detail: `Repeated terms: ${repeatedWords.map(([word, count]) => `${word} (${count})`).join(', ')}.` });
+        scoreBreakdown.push({ label: 'Repetition', points });
+      }
+      const sentenceLengths = sentences.map(s => tokenizeWords(s).length);
+      const spread = stdDev(sentenceLengths);
+      const meanLen = average(sentenceLengths);
+      let cadencePoints = 0;
+      if (sentences.length >= 4 && spread < 4.5) cadencePoints += 12;
+      if (meanLen > 28) cadencePoints += 10;
+      if (sentences.length >= 5 && sentences.filter(len => len < 8).length === 0) cadencePoints += 6;
+      if (cadencePoints > 0) {
+        score += cadencePoints;
+        findings.push({ label: 'Flat cadence', hits: cadencePoints, points: cadencePoints, detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.` });
+        scoreBreakdown.push({ label: 'Cadence', points: cadencePoints });
+      }
+      const passiveHints = (text.match(/\b(is|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
+      if (passiveHints >= 2) {
+        const points = Math.min(10, passiveHints * 2);
+        score += points;
+        findings.push({ label: 'Passive drift', hits: passiveHints, points, detail: `${passiveHints} passive-looking construction${passiveHints > 1 ? 's' : ''} spotted.` });
+        scoreBreakdown.push({ label: 'Passive', points });
+      }
+      const topSentences = sentences
+        .map(sentence => {
+          let sentenceScore = 0;
+          fillerPatterns.forEach(group => {
+            group.patterns.forEach(pattern => {
+              const matches = sentence.match(pattern);
+              if (matches) sentenceScore += matches.length * group.weight;
+            });
+          });
+          if (tokenizeWords(sentence).length > 28) sentenceScore += 5;
+          if (/\b(is|was|were|be|been|being)\s+\w+ed\b/i.test(sentence)) sentenceScore += 4;
+          return { sentence, sentenceScore, rewrite: generateSentenceRewrite(sentence) };
+        })
+        .filter(item => item.sentenceScore > 0)
+        .sort((a, b) => b.sentenceScore - a.sentenceScore)
+        .slice(0, 3);
+      score = Math.min(100, Math.round(score));
+      const band = score >= 70 ? 'High risk' : score >= 40 ? 'Moderate risk' : score > 0 ? 'Low risk' : 'Clean read';
+      const top = findings.sort((a, b) => b.points - a.points)[0] || null;
+      const rewrites = findings.slice(0, 5).map(item => ({ label: item.label, prompt: rewriteTemplates[item.label] || 'Tighten the line. Use sharper nouns, live verbs, and less cushion.' }));
+      const markdown = [
+        '# Wayne AI Tell Scanner Report',
+        '',
+        `- Risk band: **${band}**`,
+        `- AI-sheen score: **${score}/100**`,
+        `- Word count: **${words.length}**`,
+        `- Sentence count: **${sentences.length}**`,
+        `- Cadence spread: **${spread.toFixed(1)}**`,
+        '',
+        '## Score breakdown',
+        ...(scoreBreakdown.length ? scoreBreakdown.map(item => `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),
+        '',
+        '## Top findings',
+        ...(findings.length ? findings.map(item => `- **${item.label}** — ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
+        '',
+        '## Rewrite marching orders',
+        ...(rewrites.length ? rewrites.map(item => `- **${item.label}** — ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),
+        '',
+        '## Side-by-side rewrites',
+        ...(topSentences.length ? topSentences.flatMap((item, index) => [`### Line ${index + 1}`, `- Original: ${item.sentence}`, `- Rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])
+      ].join('\n');
+      const report = [
+        'WAYNE AI TELL SCANNER REPORT',
+        '--------------------------------',
+        `Risk band: ${band}`,
+        `AI-sheen score: ${score}/100`,
+        `Word count: ${words.length}`,
+        `Sentence count: ${sentences.length}`,
+        `Cadence spread: ${spread.toFixed(1)}`,
+        '',
+        'Score breakdown:',
+        ...(scoreBreakdown.length ? scoreBreakdown.map(item => `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),
+        '',
+        'Top findings:',
+        ...(findings.length ? findings.map(item => `- ${item.label}: ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
+        '',
+        'Rewrite marching orders:',
+        ...(rewrites.length ? rewrites.map(item => `- ${item.label}: ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),
+        '',
+        'Side-by-side rewrites:',
+        ...(topSentences.length ? topSentences.flatMap((item, index) => [`Line ${index + 1} original: ${item.sentence}`, `Line ${index + 1} rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])
+      ].join('\n');
+      return { score, band, top, findings, rewrites, report, markdown, wordTotal: words.length, sentenceTotal: sentences.length, spread: spread.toFixed(1), scoreBreakdown, topSentences };
+    }
+    function renderResults(result) {
+      latestResult = result;
+      scoreValue.textContent = result.score;
+      riskBand.textContent = result.band;
+      topIssue.textContent = result.top ? result.top.label : 'No dominant issue';
+      summaryLine.textContent = result.findings.length ? `${result.findings.length} pattern groups triggered. Start with ${result.top.label.toLowerCase()}.` : 'No major AI-sheen patterns triggered in this pass.';
+      meterBar.style.width = `${result.score}%`;
+      sentenceCount.textContent = result.sentenceTotal;
+      wordCount.textContent = result.wordTotal;
+      varianceScore.textContent = result.spread;
+      flagCount.textContent = result.findings.length;
+      scoreGrid.innerHTML = result.scoreBreakdown.length ? result.scoreBreakdown.map(item => `<div class="meta-card"><div class="stat-label">${item.label}</div><div class="stat-value">${item.points}</div><div>points</div></div>`).join('') : '<div class="meta-card"><div class="stat-label">Score grid</div><div>Nothing tripped in this pass.</div></div>';
+      flagList.innerHTML = result.findings.length ? result.findings.map(item => `<article class="flag"><strong>${item.label}</strong><div>${item.detail}</div><small>Penalty: ${item.points} points</small></article>`).join('') : '<article class="flag"><strong>Clean read</strong><div>No major AI-sheen patterns jumped off the page in this pass.</div><small>Read it aloud anyway. That is where weak joints get exposed.</small></article>';
+      rewriteList.innerHTML = result.rewrites.length ? result.rewrites.map(item => `<div class="rewrite-item"><strong>${item.label}</strong><div>${item.prompt}</div></div>`).join('') : '<div class="rewrite-item"><strong>Holding line</strong><div>The draft reads clean. The next pass should push argument pressure, not AI-sheen cleanup.</div></div>';
+      originalCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${item.sentence}</div></div>`).join('') : '<div class="compare-line"><strong>No hot line found</strong><div>No sentence crossed the rewrite threshold in this pass.</div></div>';
+      rewriteCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${item.rewrite}</div></div>`).join('') : '<div class="compare-line"><strong>No rewrite needed</strong><div>The draft did not cough up a top rewrite target.</div></div>';
+      reportBox.textContent = result.report;
+    }
+    async function ensureLibrary() {
+      if (!fillerPatterns.length) await loadPhraseLibrary();
+    }
+    async function runScan() {
+      await ensureLibrary();
+      const text = inputText.value.trim();
+      if (!text) {
+        reportBox.textContent = 'Paste text or upload a file first. The scanner cannot read an empty chamber.';
+        return;
+      }
+      renderResults(analyzeText(text));
+    }
+    function downloadBlob(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      fileNameChip.textContent = file.name;
+      const text = await file.text();
+      inputText.value = text;
+    });
+    scanBtn.addEventListener('click', runScan);
+    clearBtn.addEventListener('click', () => {
+      inputText.value = '';
+      fileInput.value = '';
+      fileNameChip.textContent = 'No file loaded';
+      latestResult = null;
+      renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', markdown: '# No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0', scoreBreakdown: [], topSentences: [] });
+    });
+    sampleBtn.addEventListener('click', async () => {
+      inputText.value = sampleText;
+      fileNameChip.textContent = 'Sample loaded';
+      await runScan();
+    });
+    exportTxtBtn.addEventListener('click', () => downloadBlob((latestResult?.report || reportBox.textContent), 'wayne-ai-tell-report.txt', 'text/plain;charset=utf-8'));
+    exportMdBtn.addEventListener('click', () => downloadBlob((latestResult?.markdown || '# Wayne AI Tell Scanner Report'), 'wayne-ai-tell-report.md', 'text/markdown;charset=utf-8'));
+    (function initTheme() {
+      const root = document.documentElement;
+      let current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.setAttribute('data-theme', current);
+      themeBtn.addEventListener('click', () => {
+        current = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', current);
+      });
+    })();
+    loadPhraseLibrary();
+  </script>
+</body>
+</html>

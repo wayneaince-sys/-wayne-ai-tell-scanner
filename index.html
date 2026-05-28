@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wayne AI Tell Scanner</title>
-  <meta name="description" content="Wayne-mode AI-sheen scanner with an in-browser perplexity-based detector (distilGPT-2). No API calls. Your draft never leaves the page." />
+  <meta name="description" content="Wayne-mode AI-sheen scanner with an in-browser perplexity-based detector (distilGPT-2), shallow rule-based rewrites, and Wayne-voice rewrite briefs for Claude/GPT." />
   <link rel="preconnect" href="https://api.fontshare.com" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="preconnect" href="https://huggingface.co" crossorigin />
@@ -64,16 +64,7 @@
       --shadow-md: 0 12px 30px rgba(0,0,0,0.34);
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: var(--font-body);
-      font-size: var(--text-base);
-      line-height: 1.6;
-      background: var(--color-bg);
-      color: var(--color-text);
-      -webkit-font-smoothing: antialiased;
-    }
+    body { margin: 0; min-height: 100vh; font-family: var(--font-body); font-size: var(--text-base); line-height: 1.6; background: var(--color-bg); color: var(--color-text); -webkit-font-smoothing: antialiased; }
     button, textarea, input, select { font: inherit; }
     .shell { width: min(calc(100% - 2rem), var(--content-default)); margin: 0 auto; padding: var(--space-6) 0 var(--space-12); }
     .topbar, .section-title, .split-header { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); }
@@ -87,6 +78,7 @@
     .btn:hover { transform: translateY(-1px); }
     .btn-primary { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-text-inverse); }
     .btn-primary:hover { background:var(--color-primary-hover); }
+    .btn-ghost { background: transparent; border-color: var(--color-divider); }
     .hero, .workspace { display:grid; gap:var(--space-6); }
     .hero { grid-template-columns:1.15fr 0.85fr; margin-bottom:var(--space-8); }
     .workspace { grid-template-columns:1fr 1fr; align-items:start; }
@@ -115,11 +107,16 @@
     .meter-bar.detector { background:linear-gradient(90deg, var(--color-primary), var(--color-error)); }
     .detector-band { margin-top:0.5rem; font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.08em; min-height:1.2em; }
     .detector-detail { margin-top:0.25rem; font-size:var(--text-xs); color:var(--color-text-faint); }
-    .report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; }
+    .report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; font-size:var(--text-sm); }
     .compare-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); min-height:220px; }
     .compare-box h4, .report h4, .results h4 { margin:0 0 var(--space-3); font-size:var(--text-base); }
     .compare-line { padding:var(--space-3); border-radius:var(--radius-md); background:var(--color-surface); border:1px solid var(--color-border); margin-bottom:var(--space-3); }
     .compare-line strong { display:block; margin-bottom:0.2rem; }
+    .compare-line .triggers { display:block; margin-top:0.4rem; font-size:var(--text-xs); color:var(--color-text-muted); font-style:italic; }
+    .interpretation { white-space:pre-wrap; font-size:var(--text-sm); line-height:1.55; padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); }
+    .brief-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); margin-top:var(--space-3); }
+    .brief-box .brief-prompt { white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:var(--text-xs); line-height:1.5; padding:var(--space-3); background:var(--color-surface-offset); border:1px solid var(--color-border); border-radius:var(--radius-md); margin-top:var(--space-3); }
+    .copy-btn { margin-top:var(--space-3); }
     .footer-note { margin-top:var(--space-6); color:var(--color-text-muted); font-size:var(--text-sm); }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }
     @media (max-width: 980px) {
@@ -145,7 +142,7 @@
         </div>
         <div>
           <h1>Wayne AI Tell Scanner</h1>
-          <p>Wayne-mode flags + in-browser perplexity detector. Nothing leaves the page.</p>
+          <p>Wayne-mode flags · in-browser perplexity detector · voice-rewrite briefs for Claude.</p>
         </div>
       </div>
       <div class="top-actions">
@@ -159,11 +156,11 @@
       <article class="panel hero-copy">
         <div class="eyebrow">Wayne-mode audit</div>
         <h2>Cut the filler. Break the rhythm. Put some blood back in the sentence.</h2>
-        <p>This pass scores cadence, repetition, hedging, abstraction, passive drift, and soft openers. It also runs a small distilGPT-2 model in your browser to measure how <em>predictable</em> the text is — the lower the perplexity, the more it reads like average LLM output. Nothing is sent to a server. Your draft never leaves the page.</p>
+        <p>This pass scores cadence, repetition, hedging, abstraction, passive drift, and soft openers. It also runs distilGPT-2 in your browser to measure how predictable the prose is. For voice-level rewrites — the kind where "the damage" becomes "the doorway you stop in without knowing why" — it builds a Claude-ready brief you can paste straight into your real writing tool.</p>
         <div class="hero-points">
-          <div><strong>In-browser perplexity check.</strong><span class="muted">distilGPT-2 (≈80 MB, quantized) downloads on your first scan and stays cached locally. No API keys, no servers.</span></div>
-          <div><strong>Markdown export added.</strong><span class="muted">Take the full audit (Wayne flags + perplexity score) straight into Obsidian, Scrivener, or notes.</span></div>
-          <div><strong>Text, PDF, and Word uploads.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, `.pdf`, or `.docx`. PDF.js and mammoth.js parse them locally on first use.</span></div>
+          <div><strong>Mechanical rewrites are shallow.</strong><span class="muted">The auto-rewrites cut hedges, split long sentences, and swap abstract nouns for plain ones. They don't write in your voice — only Claude or you can do that.</span></div>
+          <div><strong>Voice-rewrite brief, ready to paste.</strong><span class="muted">Each scan produces a Claude-ready prompt invoking your voice profile (Stein show-don't-tell, Ackerman embodied emotion). Copy it. Paste into Claude. Get real rewrites.</span></div>
+          <div><strong>Translation, not just numbers.</strong><span class="muted">Every score has a plain-English reading + a concrete "do this." No mystery metrics.</span></div>
         </div>
       </article>
       <aside class="panel stats">
@@ -215,23 +212,35 @@
           <div id="flagList" class="list"></div>
         </div>
         <div class="rewrite-box" style="margin-top:1.25rem;">
+          <h4>What the scores mean</h4>
+          <div id="interpretation" class="interpretation">Run a scan to see plain-English readings and concrete next steps.</div>
+        </div>
+        <div class="rewrite-box" style="margin-top:1.25rem;">
           <div class="split-header">
-            <h4 style="margin:0;">Side-by-side rewrite suggestions</h4>
+            <h4 style="margin:0;">Shallow mechanical rewrites</h4>
             <span class="chip">Top 3 lines</span>
           </div>
+          <p class="helper" style="margin-top:0.5rem;">Rule-based cleanup only — cuts hedges, swaps abstract nouns, splits long sentences. Treat as a first pass, not as your voice.</p>
           <div class="side-by-side" style="margin-top:1rem;">
             <div class="compare-box">
-              <h4>Original lines</h4>
+              <h4>Original lines (with triggers)</h4>
               <div id="originalCompare"></div>
             </div>
             <div class="compare-box">
-              <h4>Wayne-mode rewrites</h4>
+              <h4>Mechanical rewrites</h4>
               <div id="rewriteCompare"></div>
             </div>
           </div>
         </div>
         <div class="rewrite-box" style="margin-top:1.25rem;">
-          <h4>Rewrite marching orders</h4>
+          <h4>Wayne-voice rewrite brief (paste into Claude)</h4>
+          <p class="helper" style="margin-top:0.5rem;">For real voice-level rewrites — concrete sensory detail, embodied emotion — paste this whole brief into Claude (or another instruction-tuned LLM). The mechanical rewrites above can't do this; Claude can.</p>
+          <div id="briefBox" class="brief-box">
+            <em class="muted">Brief will appear after you scan a draft with at least one flagged line.</em>
+          </div>
+        </div>
+        <div class="rewrite-box" style="margin-top:1.25rem;">
+          <h4>Rewrite marching orders (per category)</h4>
           <div id="rewriteList" class="rewrite-list"></div>
         </div>
         <div class="report" id="reportBox">No report generated yet.</div>
@@ -267,6 +276,8 @@
     const detectorMeterBar = document.getElementById('detectorMeterBar');
     const detectorBandText = document.getElementById('detectorBandText');
     const detectorDetail = document.getElementById('detectorDetail');
+    const interpretationEl = document.getElementById('interpretation');
+    const briefBox = document.getElementById('briefBox');
     let fillerPatterns = [];
     let latestResult = null;
     let latestDetector = null;
@@ -291,13 +302,13 @@
     const PERPLEXITY_SCALE = 8;
     const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;
     const rewriteTemplates = {
-      'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',
-      'Soft transitions': 'Cut the hallway words. Start with the claim, not the throat-clearing.',
-      'Abstraction fog': 'Name the actor, the action, the damage, and the stake. Fog is not argument.',
-      'Hedging': 'Plant the flag. If the claim matters, stop apologizing for it.',
-      'Repetition drag': 'Break repeated wording with one specific noun and one live verb.',
-      'Flat cadence': 'Mix short hits with one longer sentence. Uniform rhythm is where lifeless copy hides.',
-      'Passive drift': 'Put the actor in the subject position and make the verb move.',
+      'Corporate filler': 'Every flagged word is replaceable. "Delve" hides "look at" or "study." "Framework" hides the specific rules or method. Replace each, do not just delete.',
+      'Soft transitions': 'Cut the throat-clearing. "However" is fine if it pivots a real claim. "More importantly" can usually be dropped — just say the more important thing first.',
+      'Abstraction fog': 'Name the actor, the action, the damage, the stake. "Framework" hides who is doing what — replace with the specific structure, rule, or method.',
+      'Hedging': 'Plant the flag. Drop "perhaps" and "may well" entirely. If you do not believe the claim, do not write it. If you do, state it.',
+      'Repetition drag': 'Break repeated wording with one specific noun and one live verb. Substitute synonyms only as a last resort — usually delete the second occurrence.',
+      'Flat cadence': 'Mix short hits with one longer sentence. Uniform rhythm is where lifeless copy hides. Read aloud — if every sentence breathes at the same pace, that is the problem.',
+      'Passive drift': 'Put the actor in the subject position and make the verb move. "The decision was made by the committee" becomes "The committee decided."',
       'Soft opener': 'Open with conflict, fact, or consequence. Stop easing into the point like you are knocking on your own door.'
     };
     function detectorBand(score) {
@@ -306,7 +317,6 @@
       return 'Likely human';
     }
     function perplexityToScore(ppl) {
-      // Sigmoid: low perplexity → high AI-likeness score
       return 1 / (1 + Math.exp((ppl - PERPLEXITY_THRESHOLD) / PERPLEXITY_SCALE));
     }
     function resetDetectorCard(message) {
@@ -353,12 +363,8 @@
         detectorTokenizer = tok;
         return { model: mdl, tokenizer: tok };
       })();
-      try {
-        return await detectorLoadPromise;
-      } catch (err) {
-        detectorLoadPromise = null;
-        throw err;
-      }
+      try { return await detectorLoadPromise; }
+      catch (err) { detectorLoadPromise = null; throw err; }
     }
     async function computePerplexity(text) {
       const { model, tokenizer } = await loadDetectorModel();
@@ -369,7 +375,7 @@
       if (seqLen < 2) throw new Error('Text too short for perplexity');
       const attention = inputs.attention_mask;
       const output = await model({ input_ids: inputIds, attention_mask: attention });
-      const logits = output.logits; // [1, seqLen, vocabSize]
+      const logits = output.logits;
       const logitsDims = logits.dims || logits.shape;
       const vocabSize = logitsDims[2];
       const logitsData = logits.data;
@@ -378,7 +384,6 @@
       let count = 0;
       for (let i = 0; i < seqLen - 1; i++) {
         const offset = i * vocabSize;
-        // Numerically stable log-softmax
         let maxLogit = -Infinity;
         for (let j = 0; j < vocabSize; j++) {
           const v = logitsData[offset + j];
@@ -391,10 +396,7 @@
         const logSumExp = maxLogit + Math.log(sumExp);
         const targetToken = Number(idsData[i + 1]);
         const logProb = logitsData[offset + targetToken] - logSumExp;
-        if (Number.isFinite(logProb)) {
-          totalLogProb += logProb;
-          count++;
-        }
+        if (Number.isFinite(logProb)) { totalLogProb += logProb; count++; }
       }
       if (count === 0) throw new Error('No valid tokens scored');
       const avgLogProb = totalLogProb / count;
@@ -404,6 +406,7 @@
     async function runDetector(text) {
       if (!text || text.length < DETECTOR_MIN_CHARS) {
         resetDetectorCard(`Needs ${DETECTOR_MIN_CHARS}+ chars for detector`);
+        updateInterpretation();
         return;
       }
       try {
@@ -425,11 +428,13 @@
         detectorMeterBar.style.width = `${Math.min(100, Math.max(0, score * 100))}%`;
         detectorBandText.textContent = detectorBand(score);
         detectorDetail.textContent = `Perplexity ${ppl.perplexity.toFixed(1)} · ${ppl.tokensScored} tokens · ${Math.round(t1 - t0)} ms`;
+        updateInterpretation();
       } catch (err) {
         detectorValue.textContent = '—';
         detectorMeterBar.style.width = '0%';
         detectorBandText.textContent = ('Error: ' + (err && err.message ? err.message : 'unknown')).slice(0, 100);
         detectorDetail.textContent = '';
+        updateInterpretation();
       }
     }
     function tokenizeSentences(text) {
@@ -438,21 +443,17 @@
     function tokenizeWords(text) {
       return text.toLowerCase().match(/\b[\w'-]+\b/g) || [];
     }
-    function average(arr) {
-      return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-    }
+    function average(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
     function stdDev(arr) {
       if (!arr.length) return 0;
       const mean = average(arr);
       const variance = average(arr.map(n => (n - mean) ** 2));
       return Math.sqrt(variance);
     }
-    function escapeRegex(phrase) {
-      return phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+    function escapeRegex(phrase) { return phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
     async function loadPhraseLibrary() {
       try {
-        const response = await fetch('./phrases.json');
+        const response = await fetch('./phrases.json?v=2026-05-28b');
         if (!response.ok) throw new Error('Could not load phrases.json');
         const data = await response.json();
         const builtInGroups = [
@@ -472,24 +473,86 @@
         fillerPatterns = Array.from(deduped.values()).map(group => ({
           label: group.label,
           weight: group.weight,
+          rawPatterns: [...new Set(group.patterns)],
           patterns: [...new Set(group.patterns)].map(phrase => new RegExp(`\\b${escapeRegex(phrase)}\\b`, 'gi'))
         }));
       } catch (error) {
         reportBox.textContent = 'Phrase library failed to load. Check phrases.json and refresh.';
       }
     }
+    // === Beefed-up rule-based rewriter ===
     function generateSentenceRewrite(sentence) {
-      let revised = sentence.trim();
-      revised = revised.replace(/\b(In today's world|Overall|Furthermore|Additionally|However|In conclusion|It is important to note that|It is worth noting that)\b[,:]?\s*/gi, '');
-      revised = revised.replace(/\b(arguably|perhaps|may well|seems to|it appears that|in many ways)\b\s*/gi, '');
-      revised = revised.replace(/\b(multifaceted|holistic|robust|meaningful|complex)\b/gi, match => ({multifaceted:'layered', holistic:'whole', robust:'strong', meaningful:'real', complex:'hard'}[match.toLowerCase()] || match));
-      revised = revised.replace(/\bframework\b/gi, 'structure');
-      revised = revised.replace(/\bconversation\b/gi, 'fight');
-      revised = revised.replace(/\bstakeholders\b/gi, 'players');
-      revised = revised.replace(/\s{2,}/g, ' ').trim();
-      if (revised && !/[.!?]$/.test(revised)) revised += '.';
-      if (revised.length && revised[0] === revised[0].toLowerCase()) revised = revised[0].toUpperCase() + revised.slice(1);
-      return revised || sentence;
+      let s = sentence.trim();
+      // 1. Strip opener phrases (more comprehensive)
+      s = s.replace(/^\s*(In today's world|In an era of [^,.]+|In a world where [^,.]+|In many ways|Overall|Furthermore|Additionally|However|Moreover|That said|More importantly|More specifically|It is important to note that|It is worth noting that|When we think about [^,.]+|There are many ways [^,.]+|As is often the case)\s*[,:]?\s*/i, '');
+      // 2. Cut hedges anywhere mid-sentence
+      s = s.replace(/\b(arguably|perhaps|may well|it appears that|in many ways|to some extent|as is often the case|generally|historically proven|could potentially)\b\s*,?\s*/gi, '');
+      s = s.replace(/\bseems to\s+/gi, '');
+      // 3. Replace abstract single-word nouns and adjectives with concrete English
+      const swaps = {
+        'multifaceted': 'layered',
+        'holistic': 'whole',
+        'robust': 'strong',
+        'meaningful': 'real',
+        'complex': 'hard',
+        'nuanced': 'specific',
+        'comprehensive': 'full',
+        'transformative': 'changes things',
+        'unprecedented': 'new',
+        'cutting-edge': 'newest',
+        'critical': 'core',
+        'sustainable': 'lasting',
+        'framework': 'rules',
+        'frameworks': 'rules',
+        'ecosystem': 'system',
+        'ecosystems': 'systems',
+        'landscape': 'ground',
+        'conversation': 'fight',
+        'stakeholders': 'people',
+        'paradigm': 'view',
+        'narrative': 'story',
+        'methodology': 'method',
+        'methodologies': 'methods'
+      };
+      s = s.replace(/\b(multifaceted|holistic|robust|meaningful|complex|nuanced|comprehensive|transformative|unprecedented|cutting-edge|critical|sustainable|frameworks|framework|ecosystems|ecosystem|landscape|conversation|stakeholders|paradigm|narrative|methodologies|methodology)\b/gi, m => swaps[m.toLowerCase()] || m);
+      // 4. Cut corporate filler verbs/phrases
+      s = s.replace(/\bdelve into\b/gi, 'examine');
+      s = s.replace(/\bdelve\b/gi, 'look');
+      s = s.replace(/\bleveraging\b/gi, 'using');
+      s = s.replace(/\bleverage\b/gi, 'use');
+      s = s.replace(/\bunlock(?:ing)? the power of\b/gi, 'use');
+      s = s.replace(/\bbest-in-class\b/gi, 'best');
+      s = s.replace(/\bpowerful solution\b/gi, 'fix');
+      s = s.replace(/\bagile methodologies\b/gi, 'agile methods');
+      s = s.replace(/\bcore business processes\b/gi, 'core processes');
+      s = s.replace(/\bunprecedented value\b/gi, 'value');
+      // 5. Cut throat-clearing mid-sentence
+      s = s.replace(/,\s*as is often the case,\s*/gi, ', ');
+      s = s.replace(/\bcritics argue that\b/gi, 'critics say');
+      s = s.replace(/\bproponents counter that\b/gi, 'supporters say');
+      s = s.replace(/\bthe truth, as is often the case, lies somewhere in the middle\b/gi, 'the truth sits in between');
+      s = s.replace(/\blies somewhere in the middle\b/gi, 'sits in between');
+      // 6. Flip simple passives
+      s = s.replace(/\bwas designed to be\b/gi, 'is');
+      s = s.replace(/\bis positioned to be\b/gi, 'is');
+      s = s.replace(/\bwas positioned to\b/gi, 'can');
+      // 7. Collapse whitespace and punctuation
+      s = s.replace(/\s{2,}/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim();
+      // 8. Split long sentences at conjunctions
+      const words = s.split(/\s+/);
+      if (words.length > 28) {
+        const splitMatch = s.match(/^(.{40,}?)\s+(but|and|because|while|that|which)\s+/);
+        if (splitMatch) {
+          const head = splitMatch[1].replace(/[,;]$/, '').trim() + '.';
+          const tail = s.slice(splitMatch[0].length).trim();
+          s = head + ' ' + (tail.charAt(0).toUpperCase() + tail.slice(1));
+        }
+      }
+      // 9. Final cleanups
+      s = s.replace(/^,\s*/, '').replace(/\s+([,.;:!?])/g, '$1').replace(/\s{2,}/g, ' ').trim();
+      if (s && !/[.!?]$/.test(s)) s += '.';
+      if (s.length && s[0] === s[0].toLowerCase()) s = s[0].toUpperCase() + s.slice(1);
+      return s || sentence;
     }
     function analyzeText(text) {
       const sentences = tokenizeSentences(text);
@@ -500,14 +563,18 @@
       let score = 0;
       fillerPatterns.forEach(group => {
         let hits = 0;
-        group.patterns.forEach(pattern => {
+        const triggeredPhrases = [];
+        group.patterns.forEach((pattern, idx) => {
           const matches = text.match(pattern);
-          if (matches) hits += matches.length;
+          if (matches) {
+            hits += matches.length;
+            triggeredPhrases.push(group.rawPatterns ? group.rawPatterns[idx] : matches[0]);
+          }
         });
         if (hits > 0) {
           const points = Math.min(group.weight * hits, group.weight * 3);
           score += points;
-          findings.push({ label: group.label, hits, points, detail: `${hits} trigger${hits > 1 ? 's' : ''} caught in this category.` });
+          findings.push({ label: group.label, hits, points, detail: `${hits} trigger${hits > 1 ? 's' : ''} caught: ${triggeredPhrases.slice(0, 5).join(', ')}.`, triggers: triggeredPhrases });
           scoreBreakdown.push({ label: group.label, points });
         }
       });
@@ -515,7 +582,7 @@
       if (repeatedWords.length) {
         const points = Math.min(14, repeatedWords.length * 3);
         score += points;
-        findings.push({ label: 'Repetition drag', hits: repeatedWords.length, points, detail: `Repeated terms: ${repeatedWords.map(([word, count]) => `${word} (${count})`).join(', ')}.` });
+        findings.push({ label: 'Repetition drag', hits: repeatedWords.length, points, detail: `Repeated terms: ${repeatedWords.map(([w, c]) => `${w} (${c})`).join(', ')}.`, triggers: repeatedWords.map(([w]) => w) });
         scoreBreakdown.push({ label: 'Repetition', points });
       }
       const sentenceLengths = sentences.map(s => tokenizeWords(s).length);
@@ -527,28 +594,33 @@
       if (sentences.length >= 5 && sentences.filter(len => len < 8).length === 0) cadencePoints += 6;
       if (cadencePoints > 0) {
         score += cadencePoints;
-        findings.push({ label: 'Flat cadence', hits: cadencePoints, points: cadencePoints, detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.` });
+        findings.push({ label: 'Flat cadence', hits: cadencePoints, points: cadencePoints, detail: `Average sentence length ${meanLen.toFixed(1)} words; variation score ${spread.toFixed(1)}.`, triggers: [] });
         scoreBreakdown.push({ label: 'Cadence', points: cadencePoints });
       }
       const passiveHints = (text.match(/\b(is|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
       if (passiveHints >= 2) {
         const points = Math.min(10, passiveHints * 2);
         score += points;
-        findings.push({ label: 'Passive drift', hits: passiveHints, points, detail: `${passiveHints} passive-looking construction${passiveHints > 1 ? 's' : ''} spotted.` });
+        findings.push({ label: 'Passive drift', hits: passiveHints, points, detail: `${passiveHints} passive-looking construction${passiveHints > 1 ? 's' : ''} spotted.`, triggers: [] });
         scoreBreakdown.push({ label: 'Passive', points });
       }
       const topSentences = sentences
         .map(sentence => {
           let sentenceScore = 0;
+          const lineTriggers = [];
           fillerPatterns.forEach(group => {
-            group.patterns.forEach(pattern => {
+            group.patterns.forEach((pattern, idx) => {
               const matches = sentence.match(pattern);
-              if (matches) sentenceScore += matches.length * group.weight;
+              if (matches) {
+                sentenceScore += matches.length * group.weight;
+                const raw = group.rawPatterns ? group.rawPatterns[idx] : matches[0];
+                lineTriggers.push(`${group.label}: "${raw}"`);
+              }
             });
           });
-          if (tokenizeWords(sentence).length > 28) sentenceScore += 5;
-          if (/\b(is|was|were|be|been|being)\s+\w+ed\b/i.test(sentence)) sentenceScore += 4;
-          return { sentence, sentenceScore, rewrite: generateSentenceRewrite(sentence) };
+          if (tokenizeWords(sentence).length > 28) { sentenceScore += 5; lineTriggers.push(`Long sentence (${tokenizeWords(sentence).length} words)`); }
+          if (/\b(is|was|were|be|been|being)\s+\w+ed\b/i.test(sentence)) { sentenceScore += 4; lineTriggers.push('Passive voice'); }
+          return { sentence, sentenceScore, rewrite: generateSentenceRewrite(sentence), triggers: lineTriggers };
         })
         .filter(item => item.sentenceScore > 0)
         .sort((a, b) => b.sentenceScore - a.sentenceScore)
@@ -557,49 +629,147 @@
       const band = score >= 70 ? 'High risk' : score >= 40 ? 'Moderate risk' : score > 0 ? 'Low risk' : 'Clean read';
       const top = findings.sort((a, b) => b.points - a.points)[0] || null;
       const rewrites = findings.slice(0, 5).map(item => ({ label: item.label, prompt: rewriteTemplates[item.label] || 'Tighten the line. Use sharper nouns, live verbs, and less cushion.' }));
-      const markdown = [
-        '# Wayne AI Tell Scanner Report',
-        '',
-        `- Risk band: **${band}**`,
-        `- AI-sheen score: **${score}/100**`,
-        `- Word count: **${words.length}**`,
-        `- Sentence count: **${sentences.length}**`,
-        `- Cadence spread: **${spread.toFixed(1)}**`,
-        '',
-        '## Score breakdown',
-        ...(scoreBreakdown.length ? scoreBreakdown.map(item => `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),
-        '',
-        '## Top findings',
-        ...(findings.length ? findings.map(item => `- **${item.label}** — ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
-        '',
-        '## Rewrite marching orders',
-        ...(rewrites.length ? rewrites.map(item => `- **${item.label}** — ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),
-        '',
-        '## Side-by-side rewrites',
-        ...(topSentences.length ? topSentences.flatMap((item, index) => [`### Line ${index + 1}`, `- Original: ${item.sentence}`, `- Rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])
-      ].join('\n');
-      const report = [
-        'WAYNE AI TELL SCANNER REPORT',
-        '--------------------------------',
-        `Risk band: ${band}`,
-        `AI-sheen score: ${score}/100`,
-        `Word count: ${words.length}`,
-        `Sentence count: ${sentences.length}`,
-        `Cadence spread: ${spread.toFixed(1)}`,
-        '',
-        'Score breakdown:',
-        ...(scoreBreakdown.length ? scoreBreakdown.map(item => `- ${item.label}: ${item.points}`) : ['- No scored categories triggered.']),
-        '',
-        'Top findings:',
-        ...(findings.length ? findings.map(item => `- ${item.label}: ${item.detail}`) : ['- No obvious AI-sheen patterns detected.']),
-        '',
-        'Rewrite marching orders:',
-        ...(rewrites.length ? rewrites.map(item => `- ${item.label}: ${item.prompt}`) : ['- Keep the pressure. Keep the specificity. Read it aloud once before publishing.']),
-        '',
-        'Side-by-side rewrites:',
-        ...(topSentences.length ? topSentences.flatMap((item, index) => [`Line ${index + 1} original: ${item.sentence}`, `Line ${index + 1} rewrite: ${item.rewrite}`, '']) : ['- No rewrite targets pulled in this pass.'])
-      ].join('\n');
-      return { score, band, top, findings, rewrites, report, markdown, wordTotal: words.length, sentenceTotal: sentences.length, spread: spread.toFixed(1), scoreBreakdown, topSentences };
+      return { score, band, top, findings, rewrites, wordTotal: words.length, sentenceTotal: sentences.length, spread: spread.toFixed(1), meanLen: meanLen.toFixed(1), scoreBreakdown, topSentences };
+    }
+    // === Interpretation builders ===
+    function categoryAction(label) {
+      const cleanLabel = label === 'Repetition' ? 'Repetition drag' : label === 'Cadence' ? 'Flat cadence' : label === 'Passive' ? 'Passive drift' : label;
+      return rewriteTemplates[cleanLabel] || 'Tighten the line. Sharper nouns, live verbs, less cushion.';
+    }
+    function buildInterpretation(result, detector) {
+      if (!result) return 'Run a scan to see plain-English readings and concrete next steps.';
+      const lines = [];
+      lines.push(`AI-SHEEN SCORE ${result.score}/100 — ${result.band.toUpperCase()}`);
+      if (result.score >= 70) {
+        lines.push(`This text is dense with cataloged AI-tell patterns. To move below 70 (Moderate),`);
+        lines.push(`cut 3-5 trigger phrases AND raise cadence variation. To reach 0 (Clean), eliminate`);
+        lines.push(`all flagged phrases and add at least one short punchy sentence.`);
+      } else if (result.score >= 40) {
+        lines.push(`Moderate AI sheen. A handful of trigger phrases caught. Cleanup is achievable with`);
+        lines.push(`targeted edits — focus on the top issue category first.`);
+      } else if (result.score > 0) {
+        lines.push(`Light AI sheen. A few trigger phrases caught but not dominant. Read aloud — if it`);
+        lines.push(`flows in your voice, ship it.`);
+      } else {
+        lines.push(`No cataloged AI patterns triggered. The remaining concern is whether the prose has`);
+        lines.push(`pulse and pressure. Read aloud once before publishing.`);
+      }
+      lines.push('');
+      if (detector && typeof detector.score === 'number') {
+        const ds = detector.score;
+        const ppl = detector.perplexity;
+        let band, advice;
+        if (ds >= 0.7) {
+          band = 'LIKELY AI';
+          advice = [
+            `distilGPT-2 finds this text very predictable. Human writing on similar topics typically`,
+            `scores 50-90 perplexity. Yours is ${ppl.toFixed(1)}. To raise perplexity (and lower the score):`,
+            `  • Add specific names, places, numbers — the model cannot predict proper nouns.`,
+            `  • Choose unexpected verbs ("the rules collapsed" not "the rules existed").`,
+            `  • Start sentences with the action, not the throat-clearing.`
+          ];
+        } else if (ds >= 0.3) {
+          band = 'MIXED SIGNAL';
+          advice = [
+            `Borderline reading. Some patterns are predictable, some surprising. Look at the high-`,
+            `scoring sentences below — that is where predictability concentrates.`
+          ];
+        } else {
+          band = 'LIKELY HUMAN';
+          advice = [
+            `Low predictability — the prose contains surprising word choices the small language model`,
+            `did not expect. Either you are writing in your voice or using domain-specific language.`
+          ];
+        }
+        lines.push(`PERPLEXITY ${ppl.toFixed(1)} — ${band} (detector ${ds.toFixed(2)})`);
+        advice.forEach(l => lines.push(l));
+      } else {
+        lines.push(`PERPLEXITY — pending (detector still loading or text too short)`);
+      }
+      lines.push('');
+      const spread = parseFloat(result.spread);
+      lines.push(`CADENCE SPREAD ${result.spread} — ${spread >= 6 ? 'GOOD VARIETY' : 'TOO UNIFORM'} (target 6+)`);
+      if (spread < 6) {
+        lines.push(`Sentence lengths cluster too tightly. AI prose runs in uniform 18-25 word blocks.`);
+        lines.push(`Mix short punches (5-8 words) with longer elaborations (20-30 words). Your average is ${result.meanLen} words.`);
+      } else {
+        lines.push(`Sentence lengths vary enough to keep rhythm alive.`);
+      }
+      lines.push('');
+      if (result.findings.length) {
+        lines.push(`CATEGORY-BY-CATEGORY ACTIONS`);
+        result.findings.forEach(f => {
+          lines.push('');
+          lines.push(`• ${f.label} — ${f.points} pts`);
+          lines.push(`  ${f.detail}`);
+          lines.push(`  Action: ${categoryAction(f.label)}`);
+        });
+        lines.push('');
+      }
+      lines.push(`TOP 3 ACTIONS — PRIORITIZED`);
+      const actions = buildTopActions(result, detector);
+      actions.forEach((a, i) => lines.push(`${i + 1}. ${a}`));
+      return lines.join('\n');
+    }
+    function buildTopActions(result, detector) {
+      const actions = [];
+      if (result.scoreBreakdown.length) {
+        const top = [...result.scoreBreakdown].sort((a, b) => b.points - a.points)[0];
+        const cleanLabel = top.label === 'Repetition' ? 'Repetition drag' : top.label === 'Cadence' ? 'Flat cadence' : top.label === 'Passive' ? 'Passive drift' : top.label;
+        actions.push(`Tackle ${cleanLabel.toLowerCase()} first — it cost ${top.points} points. ${categoryAction(top.label).split('.')[0]}.`);
+      }
+      const spread = parseFloat(result.spread);
+      if (spread < 6 && (!result.scoreBreakdown.length || result.scoreBreakdown[0].label !== 'Cadence')) {
+        actions.push(`Break the flat cadence. Add 2-3 short punchy sentences (under 10 words) interspersed with your longer ones. Read aloud as the test.`);
+      }
+      if (detector && detector.score >= 0.7) {
+        actions.push(`Lower perplexity by ${(detector.perplexity).toFixed(0)} → 60+: drop in a proper noun, a number, a body sensation. The model cannot predict the specific.`);
+      }
+      const remainingLabels = result.findings.map(f => f.label).filter(l => !actions.some(a => a.toLowerCase().includes(l.toLowerCase().split(' ')[0])));
+      if (remainingLabels.length && actions.length < 3) {
+        actions.push(`Then sweep the rest: ${remainingLabels.slice(0, 3).map(r => r.toLowerCase()).join(', ')}. Each category has flagged phrases above.`);
+      }
+      if (actions.length === 0) {
+        actions.push(`No mechanical issues found. Next pass: argument pressure and emotional specificity.`);
+        actions.push(`Read aloud once. Listen for where you hesitate — that is the next edit.`);
+      }
+      return actions.slice(0, 3);
+    }
+    function buildVoiceRewriteBrief(result) {
+      if (!result || !result.topSentences.length) {
+        return { hasBrief: false, briefHtml: '<em class="muted">Brief will appear after you scan a draft with at least one flagged line.</em>', briefText: '' };
+      }
+      const promptHeader = `Rewrite the following lines in Wayne Ince's voice. Wayne is a 23-year USAF veteran writing about PTSD, Black mental health, social justice, and military thriller fiction (the Marcus Johnson series). His prose is anti-corporate, anti-AI-sheen. He uses Stein's show-don't-tell — concrete sensory and physical detail in place of abstractions. He uses Ackerman/Puglisi-style embodied emotional cues (physical signals, suppressed gestures, anniversary dates, body posture, sensory triggers) rather than naming feelings. Working-class veteran voice — short punches, no SAT words.
+
+Example of the bar:
+- Mechanical original: "The list is specific, and so is the damage."
+- Wayne-voice rewrite: "The list is specific, and so is what it leaves in the body: the doorway you stop in without knowing why, the anniversary date you stopped saying out loud."
+
+Rewrite each line below. Preserve the core claim but ground it in particulars only Wayne would write. Replace abstractions with specific embodied/sensory detail. Cut hedges and corporate phrasing. Output only the three rewritten lines, numbered, no commentary.`;
+      const lineBlock = result.topSentences.map((item, i) => {
+        const triggers = item.triggers && item.triggers.length ? item.triggers.join(' · ') : 'cadence / generic phrasing';
+        return `Line ${i + 1} — triggers: ${triggers}\n"${item.sentence}"`;
+      }).join('\n\n');
+      const fullPrompt = promptHeader + '\n\n' + lineBlock;
+      const briefHtml = `<p class="muted" style="margin:0 0 0.5rem;">Paste the block below into Claude (or another instruction-tuned LLM):</p><pre class="brief-prompt" id="briefPromptText">${escapeHtml(fullPrompt)}</pre><button class="btn btn-ghost copy-btn" id="copyBriefBtn" type="button">Copy brief</button>`;
+      return { hasBrief: true, briefHtml, briefText: fullPrompt };
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+    function updateInterpretation() {
+      const text = buildInterpretation(latestResult, latestDetector);
+      interpretationEl.textContent = text;
+      const brief = buildVoiceRewriteBrief(latestResult);
+      briefBox.innerHTML = brief.briefHtml;
+      if (brief.hasBrief) {
+        const btn = document.getElementById('copyBriefBtn');
+        if (btn) btn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(brief.briefText); btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy brief'; }, 1500); }
+          catch (e) { btn.textContent = 'Copy failed — select manually'; }
+        });
+      }
+      reportBox.textContent = buildPlainTextReport(latestResult, latestDetector, brief.briefText);
     }
     function renderResults(result) {
       latestResult = result;
@@ -615,9 +785,104 @@
       scoreGrid.innerHTML = result.scoreBreakdown.length ? result.scoreBreakdown.map(item => `<div class="meta-card"><div class="stat-label">${item.label}</div><div class="stat-value">${item.points}</div><div>points</div></div>`).join('') : '<div class="meta-card"><div class="stat-label">Score grid</div><div>Nothing tripped in this pass.</div></div>';
       flagList.innerHTML = result.findings.length ? result.findings.map(item => `<article class="flag"><strong>${item.label}</strong><div>${item.detail}</div><small>Penalty: ${item.points} points</small></article>`).join('') : '<article class="flag"><strong>Clean read</strong><div>No major AI-sheen patterns jumped off the page in this pass.</div><small>Read it aloud anyway. That is where weak joints get exposed.</small></article>';
       rewriteList.innerHTML = result.rewrites.length ? result.rewrites.map(item => `<div class="rewrite-item"><strong>${item.label}</strong><div>${item.prompt}</div></div>`).join('') : '<div class="rewrite-item"><strong>Holding line</strong><div>The draft reads clean. The next pass should push argument pressure, not AI-sheen cleanup.</div></div>';
-      originalCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${item.sentence}</div></div>`).join('') : '<div class="compare-line"><strong>No hot line found</strong><div>No sentence crossed the rewrite threshold in this pass.</div></div>';
-      rewriteCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${item.rewrite}</div></div>`).join('') : '<div class="compare-line"><strong>No rewrite needed</strong><div>The draft did not cough up a top rewrite target.</div></div>';
-      reportBox.textContent = result.report;
+      originalCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => {
+        const trig = item.triggers && item.triggers.length ? `<span class="triggers">Triggers: ${escapeHtml(item.triggers.join(' · '))}</span>` : '';
+        return `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${escapeHtml(item.sentence)}</div>${trig}</div>`;
+      }).join('') : '<div class="compare-line"><strong>No hot line found</strong><div>No sentence crossed the rewrite threshold in this pass.</div></div>';
+      rewriteCompare.innerHTML = result.topSentences.length ? result.topSentences.map((item, index) => `<div class="compare-line"><strong>Line ${index + 1}</strong><div>${escapeHtml(item.rewrite)}</div></div>`).join('') : '<div class="compare-line"><strong>No rewrite needed</strong><div>The draft did not cough up a top rewrite target.</div></div>';
+      updateInterpretation();
+    }
+    function buildPlainTextReport(result, detector, briefText) {
+      if (!result) return 'No report generated yet.';
+      const lines = [];
+      lines.push('WAYNE AI TELL SCANNER REPORT');
+      lines.push('========================================');
+      lines.push(`Risk band: ${result.band}`);
+      lines.push(`AI-sheen score: ${result.score}/100`);
+      if (detector && typeof detector.score === 'number') {
+        lines.push(`Perplexity detector: ${detector.score.toFixed(2)} (${detectorBand(detector.score)}) — ppl ${detector.perplexity.toFixed(1)}`);
+      }
+      lines.push(`Word count: ${result.wordTotal}`);
+      lines.push(`Sentence count: ${result.sentenceTotal}`);
+      lines.push(`Cadence spread: ${result.spread} (target 6+)`);
+      lines.push('');
+      lines.push('--- WHAT THE SCORES MEAN ---');
+      lines.push(buildInterpretation(result, detector));
+      lines.push('');
+      lines.push('--- FLAGS ---');
+      if (result.findings.length) {
+        result.findings.forEach(f => lines.push(`• ${f.label} (${f.points} pts): ${f.detail}`));
+      } else {
+        lines.push('No AI-sheen patterns triggered.');
+      }
+      lines.push('');
+      lines.push('--- REWRITE PRESSURE (top 3 lines) ---');
+      if (result.topSentences.length) {
+        result.topSentences.forEach((item, i) => {
+          lines.push(`Line ${i + 1}`);
+          lines.push(`  Triggers: ${item.triggers && item.triggers.length ? item.triggers.join(' · ') : 'cadence / generic'}`);
+          lines.push(`  Original: ${item.sentence}`);
+          lines.push(`  Mechanical rewrite: ${item.rewrite}`);
+          lines.push('');
+        });
+      } else {
+        lines.push('No lines crossed the rewrite threshold.');
+        lines.push('');
+      }
+      if (briefText) {
+        lines.push('--- WAYNE-VOICE REWRITE BRIEF (paste into Claude) ---');
+        lines.push(briefText);
+      }
+      return lines.join('\n');
+    }
+    function buildMarkdownReport(result, detector, briefText) {
+      if (!result) return '# No report generated yet.';
+      const lines = [];
+      lines.push('# Wayne AI Tell Scanner Report');
+      lines.push('');
+      lines.push(`- **Risk band:** ${result.band}`);
+      lines.push(`- **AI-sheen score:** ${result.score}/100`);
+      if (detector && typeof detector.score === 'number') {
+        lines.push(`- **Perplexity detector:** ${detector.score.toFixed(2)} (${detectorBand(detector.score)}) — perplexity ${detector.perplexity.toFixed(1)}`);
+      }
+      lines.push(`- **Word count:** ${result.wordTotal}`);
+      lines.push(`- **Sentence count:** ${result.sentenceTotal}`);
+      lines.push(`- **Cadence spread:** ${result.spread} (target 6+)`);
+      lines.push('');
+      lines.push('## What the scores mean');
+      lines.push('');
+      lines.push('```');
+      lines.push(buildInterpretation(result, detector));
+      lines.push('```');
+      lines.push('');
+      lines.push('## Flags');
+      if (result.findings.length) {
+        result.findings.forEach(f => lines.push(`- **${f.label}** (${f.points} pts) — ${f.detail}`));
+      } else {
+        lines.push('- No AI-sheen patterns triggered.');
+      }
+      lines.push('');
+      lines.push('## Rewrite pressure — top 3 lines');
+      if (result.topSentences.length) {
+        result.topSentences.forEach((item, i) => {
+          lines.push(`### Line ${i + 1}`);
+          lines.push(`- Triggers: ${item.triggers && item.triggers.length ? item.triggers.join(' · ') : 'cadence / generic'}`);
+          lines.push(`- Original: ${item.sentence}`);
+          lines.push(`- Mechanical rewrite: ${item.rewrite}`);
+          lines.push('');
+        });
+      } else {
+        lines.push('No lines crossed the rewrite threshold.');
+        lines.push('');
+      }
+      if (briefText) {
+        lines.push('## Wayne-voice rewrite brief (paste into Claude)');
+        lines.push('');
+        lines.push('```');
+        lines.push(briefText);
+        lines.push('```');
+      }
+      return lines.join('\n');
     }
     async function ensureLibrary() {
       if (!fillerPatterns.length) await loadPhraseLibrary();
@@ -630,42 +895,9 @@
         return;
       }
       renderResults(analyzeText(text));
-      // Non-blocking: detector runs in parallel (loads model on first call, then cached)
       runDetector(text);
     }
-    function buildDetectorReport(asMarkdown) {
-      if (!latestDetector) return '';
-      const s = latestDetector.score.toFixed(3);
-      const b = detectorBand(latestDetector.score);
-      const ppl = latestDetector.perplexity.toFixed(1);
-      if (asMarkdown) {
-        return '\n\n## Perplexity detector (in-browser distilGPT-2)\n' +
-               `- AI-likeness score: **${s}** / 1.000\n` +
-               `- Perplexity: **${ppl}** (lower = more predictable / more LLM-like)\n` +
-               `- Tokens scored: ${latestDetector.tokensScored}\n` +
-               `- Reading: **${b}**\n` +
-               `- Model: \`${DETECTOR_MODEL_ID}\` (quantized int8)\n` +
-               `- Note: Perplexity is a triage signal, not proof. A small GPT-2 era model; modern long-context models may shift the distribution.\n`;
-      } else {
-        return '\n\nPERPLEXITY DETECTOR (in-browser distilGPT-2)\n' +
-               '--------------------------------\n' +
-               `AI-likeness score: ${s} / 1.000\n` +
-               `Perplexity: ${ppl} (lower = more predictable / more LLM-like)\n` +
-               `Tokens scored: ${latestDetector.tokensScored}\n` +
-               `Reading: ${b}\n` +
-               `Model: ${DETECTOR_MODEL_ID} (quantized int8)\n` +
-               `Note: Perplexity is a triage signal, not proof. A small GPT-2 era model; modern long-context models may shift the distribution.\n`;
-      }
-    }
-    function downloadBlob(content, filename, type) {
-      const blob = new Blob([content], { type });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+    // === File parsers ===
     async function loadPdfJs() {
       if (pdfjsLib) return pdfjsLib;
       if (pdfjsLoadPromise) return pdfjsLoadPromise;
@@ -724,17 +956,13 @@
           const text = await extractTextFromPdf(file);
           inputText.value = text;
           fileNameChip.textContent = file.name + (text ? '' : ' (no text)');
-          if (!text) {
-            reportBox.textContent = `${file.name}: no extractable text. Looks like a scanned or image-only PDF. OCR is not wired into this version — try the source Word/Pages file, copy-paste, or a text-based export.`;
-          }
+          if (!text) reportBox.textContent = `${file.name}: no extractable text. Scanned/image PDF — OCR not wired in this version.`;
         } else if (isDocx) {
           fileNameChip.textContent = `Parsing ${file.name}…`;
           const text = await extractTextFromDocx(file);
           inputText.value = text;
           fileNameChip.textContent = file.name + (text ? '' : ' (no text)');
-          if (!text) {
-            reportBox.textContent = `${file.name}: no text extracted. The document may be empty or password-protected.`;
-          }
+          if (!text) reportBox.textContent = `${file.name}: no text extracted. Empty or password-protected?`;
         } else {
           fileNameChip.textContent = file.name;
           const text = await file.text();
@@ -752,7 +980,10 @@
       fileNameChip.textContent = 'No file loaded';
       latestResult = null;
       resetDetectorCard();
-      renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', markdown: '# No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0', scoreBreakdown: [], topSentences: [] });
+      renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], wordTotal: 0, sentenceTotal: 0, spread: '0.0', meanLen: '0.0', scoreBreakdown: [], topSentences: [] });
+      interpretationEl.textContent = 'Run a scan to see plain-English readings and concrete next steps.';
+      briefBox.innerHTML = '<em class="muted">Brief will appear after you scan a draft with at least one flagged line.</em>';
+      reportBox.textContent = 'No report generated yet.';
     });
     sampleBtn.addEventListener('click', async () => {
       inputText.value = sampleText;
@@ -760,13 +991,24 @@
       await runScan();
     });
     exportTxtBtn.addEventListener('click', () => {
-      const base = latestResult?.report || reportBox.textContent;
-      downloadBlob(base + buildDetectorReport(false), 'wayne-ai-tell-report.txt', 'text/plain;charset=utf-8');
+      const brief = buildVoiceRewriteBrief(latestResult);
+      const body = buildPlainTextReport(latestResult, latestDetector, brief.briefText);
+      downloadBlob(body, 'wayne-ai-tell-report.txt', 'text/plain;charset=utf-8');
     });
     exportMdBtn.addEventListener('click', () => {
-      const base = latestResult?.markdown || '# Wayne AI Tell Scanner Report';
-      downloadBlob(base + buildDetectorReport(true), 'wayne-ai-tell-report.md', 'text/markdown;charset=utf-8');
+      const brief = buildVoiceRewriteBrief(latestResult);
+      const body = buildMarkdownReport(latestResult, latestDetector, brief.briefText);
+      downloadBlob(body, 'wayne-ai-tell-report.md', 'text/markdown;charset=utf-8');
     });
+    function downloadBlob(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
     (function initTheme() {
       const root = document.documentElement;
       let current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

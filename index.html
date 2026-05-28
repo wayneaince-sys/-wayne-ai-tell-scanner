@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wayne AI Tell Scanner</title>
-  <meta name="description" content="A personal AI-sheen scanner in Wayne-mode that flags generic phrasing, repetition, abstraction, and weak rhythm in draft writing." />
+  <meta name="description" content="Wayne-mode AI-sheen scanner with an in-browser RoBERTa AI detector. No API calls. Your draft never leaves the page." />
   <link rel="preconnect" href="https://api.fontshare.com" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="preconnect" href="https://huggingface.co" crossorigin />
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet" />
   <style>
     :root, [data-theme="light"] {
@@ -105,11 +107,13 @@
     textarea { width:100%; min-height:360px; resize:vertical; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:var(--space-4); background:var(--color-surface-2); color:var(--color-text); outline:none; }
     textarea:focus, input[type="file"]:focus { border-color:var(--color-primary); box-shadow:0 0 0 3px var(--color-primary-highlight); }
     .meta-grid, .score-grid, .side-by-side { display:grid; gap:var(--space-3); }
-    .meta-grid { grid-template-columns:repeat(3,1fr); margin-bottom:var(--space-5); }
+    .meta-grid { grid-template-columns:repeat(2,1fr); margin-bottom:var(--space-5); }
     .score-grid { grid-template-columns:repeat(4,1fr); margin-bottom:var(--space-5); }
     .side-by-side { grid-template-columns:1fr 1fr; }
     .meter { height:12px; width:100%; background:var(--color-surface-offset); border-radius:999px; overflow:hidden; border:1px solid var(--color-divider); margin-top:var(--space-3); }
     .meter-bar { height:100%; width:0%; background:linear-gradient(90deg, var(--color-warning), var(--color-error)); transition: width 400ms var(--transition); }
+    .meter-bar.detector { background:linear-gradient(90deg, var(--color-primary), var(--color-error)); }
+    .detector-band { margin-top:0.5rem; font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.08em; min-height:1.2em; }
     .report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; }
     .compare-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); min-height:220px; }
     .compare-box h4, .report h4, .results h4 { margin:0 0 var(--space-3); font-size:var(--text-base); }
@@ -140,7 +144,7 @@
         </div>
         <div>
           <h1>Wayne AI Tell Scanner</h1>
-          <p>Now with file upload, markdown export, sharper scoring, and rewrite pressure.</p>
+          <p>Wayne-mode flags + in-browser RoBERTa AI detector. Nothing leaves the page.</p>
         </div>
       </div>
       <div class="top-actions">
@@ -154,10 +158,10 @@
       <article class="panel hero-copy">
         <div class="eyebrow">Wayne-mode audit</div>
         <h2>Cut the filler. Break the rhythm. Put some blood back in the sentence.</h2>
-        <p>This pass goes beyond keyword swats. It scores cadence, repetition, hedging, abstraction, passive drift, and soft openers, then shows you what the sentence looked like before and after the pressure hit it.</p>
+        <p>This pass scores cadence, repetition, hedging, abstraction, passive drift, and soft openers. It also runs a small RoBERTa AI-text classifier in your browser and reports a 0–1 score next to the Wayne flags. No API calls. Your draft never leaves the page.</p>
         <div class="hero-points">
-          <div><strong>Phrase library expanded.</strong><span class="muted">More trigger families, weighted scoring, cleaner reads.</span></div>
-          <div><strong>Markdown export added.</strong><span class="muted">Take the audit straight into Obsidian, Scrivener, or notes.</span></div>
+          <div><strong>In-browser detector.</strong><span class="muted">~80 MB model downloads on your first scan, then cached locally. No keys, no servers.</span></div>
+          <div><strong>Markdown export added.</strong><span class="muted">Take the full audit (Wayne flags + detector score) straight into Obsidian, Scrivener, or notes.</span></div>
           <div><strong>Upload support included.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, or other readable text files.</span></div>
         </div>
       </article>
@@ -188,7 +192,7 @@
           <button class="btn btn-primary" id="scanBtn" type="button">Scan draft</button>
           <button class="btn" id="clearBtn" type="button">Clear</button>
         </div>
-        <p class="footer-note">This tool flags AI-sheen risk. It does not prove authorship. It is a style triage blade, not a courtroom witness.</p>
+        <p class="footer-note">Detector is a GPT-2 era RoBERTa classifier — strong on classic AI sheen, weaker on modern GPT-4 / Claude output. Style triage blade, not a courtroom witness.</p>
       </article>
       <article class="panel results">
         <div class="section-title">
@@ -199,7 +203,8 @@
           <span class="risk-band" id="riskBand">No scan yet</span>
         </div>
         <div class="meta-grid">
-          <div class="meta-card"><div class="stat-label">AI-sheen score</div><div class="stat-value" id="scoreValue">0</div><div class="meter"><div class="meter-bar" id="meterBar"></div></div></div>
+          <div class="meta-card"><div class="stat-label">AI-sheen score (Wayne)</div><div class="stat-value" id="scoreValue">0</div><div class="meter"><div class="meter-bar" id="meterBar"></div></div></div>
+          <div class="meta-card"><div class="stat-label">RoBERTa detector</div><div class="stat-value" id="detectorValue">—</div><div class="meter"><div class="meter-bar detector" id="detectorMeterBar"></div></div><div class="detector-band" id="detectorBandText">Runs on first Scan (~80 MB one-time download)</div></div>
           <div class="meta-card"><div class="stat-label">Top issue</div><div id="topIssue">None</div></div>
           <div class="meta-card"><div class="stat-label">Reading</div><div id="summaryLine">Paste text and run a scan.</div></div>
         </div>
@@ -257,8 +262,17 @@
     const varianceScore = document.getElementById('varianceScore');
     const flagCount = document.getElementById('flagCount');
     const scoreGrid = document.getElementById('scoreGrid');
+    const detectorValue = document.getElementById('detectorValue');
+    const detectorMeterBar = document.getElementById('detectorMeterBar');
+    const detectorBandText = document.getElementById('detectorBandText');
     let fillerPatterns = [];
     let latestResult = null;
+    let latestDetector = null;
+    let detectorPipeline = null;
+    let detectorLoadPromise = null;
+    const DETECTOR_MODEL = 'Xenova/roberta-base-openai-detector';
+    const DETECTOR_LIB_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+    const DETECTOR_MIN_CHARS = 50;
     const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;
     const rewriteTemplates = {
       'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',
@@ -270,6 +284,94 @@
       'Passive drift': 'Put the actor in the subject position and make the verb move.',
       'Soft opener': 'Open with conflict, fact, or consequence. Stop easing into the point like you are knocking on your own door.'
     };
+    function detectorBand(score) {
+      if (score >= 0.7) return 'Likely AI';
+      if (score >= 0.3) return 'Mixed signal';
+      return 'Likely human';
+    }
+    function resetDetectorCard(message) {
+      latestDetector = null;
+      detectorValue.textContent = '—';
+      detectorMeterBar.style.width = '0%';
+      detectorBandText.textContent = message || (detectorPipeline ? 'Click Scan to check' : 'Runs on first Scan (~80 MB one-time download)');
+    }
+    async function loadDetector() {
+      if (detectorPipeline) return detectorPipeline;
+      if (detectorLoadPromise) return detectorLoadPromise;
+      detectorLoadPromise = (async () => {
+        detectorBandText.textContent = 'Loading transformers.js…';
+        const mod = await import(DETECTOR_LIB_URL);
+        const { pipeline, env } = mod;
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+        let lastPct = -1;
+        detectorPipeline = await pipeline('text-classification', DETECTOR_MODEL, {
+          progress_callback: (p) => {
+            if (!p) return;
+            if (p.status === 'progress' && typeof p.progress === 'number') {
+              const pct = Math.round(p.progress);
+              if (pct !== lastPct) {
+                lastPct = pct;
+                detectorBandText.textContent = `Downloading model… ${pct}%`;
+                detectorMeterBar.style.width = `${pct}%`;
+              }
+            } else if (p.status === 'ready') {
+              detectorBandText.textContent = 'Model ready, analyzing…';
+              detectorMeterBar.style.width = '0%';
+            } else if (p.status === 'initiate') {
+              detectorBandText.textContent = 'Fetching model files…';
+            } else if (p.status === 'download') {
+              detectorBandText.textContent = `Downloading ${p.file || 'model'}…`;
+            }
+          }
+        });
+        return detectorPipeline;
+      })();
+      try {
+        return await detectorLoadPromise;
+      } catch (err) {
+        detectorLoadPromise = null;
+        throw err;
+      }
+    }
+    async function runDetector(text) {
+      if (!text || text.length < DETECTOR_MIN_CHARS) {
+        resetDetectorCard(`Needs ${DETECTOR_MIN_CHARS}+ chars for detector`);
+        return;
+      }
+      try {
+        detectorValue.textContent = '…';
+        if (!detectorPipeline) {
+          detectorBandText.textContent = 'Loading detector (one-time)…';
+          detectorMeterBar.style.width = '0%';
+        } else {
+          detectorBandText.textContent = 'Analyzing…';
+          detectorMeterBar.style.width = '0%';
+        }
+        const pipe = await loadDetector();
+        const results = await pipe(text, { top_k: null, truncation: true });
+        const arr = Array.isArray(results) ? results : [results];
+        // Model returns [{label, score}, ...]. "Fake" / LABEL_1 = machine-generated. Prefer that score.
+        let fake = arr.find(r => r && typeof r.label === 'string' && (
+          r.label === 'Fake' || r.label === 'LABEL_1' || /fake|machine|ai/i.test(r.label)
+        ));
+        if (!fake && arr.length === 2) {
+          const real = arr.find(r => r && typeof r.label === 'string' && (
+            r.label === 'Real' || r.label === 'LABEL_0' || /real|human/i.test(r.label)
+          ));
+          if (real) fake = { score: 1 - real.score, label: 'Fake (derived)' };
+        }
+        const score = (fake && typeof fake.score === 'number') ? fake.score : 0;
+        latestDetector = { score: score, raw: arr };
+        detectorValue.textContent = score.toFixed(2);
+        detectorMeterBar.style.width = `${Math.min(100, Math.max(0, score * 100))}%`;
+        detectorBandText.textContent = detectorBand(score);
+      } catch (err) {
+        detectorValue.textContent = '—';
+        detectorMeterBar.style.width = '0%';
+        detectorBandText.textContent = ('Error: ' + (err && err.message ? err.message : 'unknown')).slice(0, 80);
+      }
+    }
     function tokenizeSentences(text) {
       return text.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [];
     }
@@ -468,6 +570,27 @@
         return;
       }
       renderResults(analyzeText(text));
+      // Non-blocking: detector runs in parallel (loads model on first call, then cached)
+      runDetector(text);
+    }
+    function buildDetectorReport(asMarkdown) {
+      if (!latestDetector) return '';
+      const s = latestDetector.score.toFixed(3);
+      const b = detectorBand(latestDetector.score);
+      if (asMarkdown) {
+        return '\n\n## RoBERTa AI detector (in-browser)\n' +
+               `- Score: **${s}** / 1.000\n` +
+               `- Reading: **${b}**\n` +
+               `- Model: \`${DETECTOR_MODEL}\`\n` +
+               `- Note: GPT-2 era detector; reliable on classic AI sheen, weaker on modern GPT-4 / Claude.\n`;
+      } else {
+        return '\n\nROBERTA AI DETECTOR (in-browser)\n' +
+               '--------------------------------\n' +
+               `Score: ${s} / 1.000\n` +
+               `Reading: ${b}\n` +
+               `Model: ${DETECTOR_MODEL}\n` +
+               `Note: GPT-2 era detector; reliable on classic AI sheen, weaker on modern GPT-4 / Claude.\n`;
+      }
     }
     function downloadBlob(content, filename, type) {
       const blob = new Blob([content], { type });
@@ -491,6 +614,7 @@
       fileInput.value = '';
       fileNameChip.textContent = 'No file loaded';
       latestResult = null;
+      resetDetectorCard();
       renderResults({ score: 0, band: 'No scan yet', top: null, findings: [], rewrites: [], report: 'No report generated yet.', markdown: '# No report generated yet.', wordTotal: 0, sentenceTotal: 0, spread: '0.0', scoreBreakdown: [], topSentences: [] });
     });
     sampleBtn.addEventListener('click', async () => {
@@ -498,8 +622,14 @@
       fileNameChip.textContent = 'Sample loaded';
       await runScan();
     });
-    exportTxtBtn.addEventListener('click', () => downloadBlob((latestResult?.report || reportBox.textContent), 'wayne-ai-tell-report.txt', 'text/plain;charset=utf-8'));
-    exportMdBtn.addEventListener('click', () => downloadBlob((latestResult?.markdown || '# Wayne AI Tell Scanner Report'), 'wayne-ai-tell-report.md', 'text/markdown;charset=utf-8'));
+    exportTxtBtn.addEventListener('click', () => {
+      const base = latestResult?.report || reportBox.textContent;
+      downloadBlob(base + buildDetectorReport(false), 'wayne-ai-tell-report.txt', 'text/plain;charset=utf-8');
+    });
+    exportMdBtn.addEventListener('click', () => {
+      const base = latestResult?.markdown || '# Wayne AI Tell Scanner Report';
+      downloadBlob(base + buildDetectorReport(true), 'wayne-ai-tell-report.md', 'text/markdown;charset=utf-8');
+    });
     (function initTheme() {
       const root = document.documentElement;
       let current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -509,6 +639,7 @@
         root.setAttribute('data-theme', current);
       });
     })();
+    resetDetectorCard();
     loadPhraseLibrary();
   </script>
 </body>

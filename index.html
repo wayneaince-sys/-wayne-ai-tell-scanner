@@ -285,8 +285,10 @@
     const DETECTOR_MIN_CHARS = 50;
     const DETECTOR_MAX_TOKENS = 512;
     // Perplexity → AI-likeness score mapping (sigmoid centered at threshold)
-    const PERPLEXITY_THRESHOLD = 40;
-    const PERPLEXITY_SCALE = 15;
+    // Calibrated 2026-05-28 against Wayne's blog posts + AI samples.
+    // T=47, S=8 puts pure Wayne voice ~0.15 and clear AI prose ~0.7-0.9.
+    const PERPLEXITY_THRESHOLD = 47;
+    const PERPLEXITY_SCALE = 8;
     const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;
     const rewriteTemplates = {
       'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',

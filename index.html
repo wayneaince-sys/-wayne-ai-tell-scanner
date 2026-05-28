@@ -163,7 +163,7 @@
         <div class="hero-points">
           <div><strong>In-browser perplexity check.</strong><span class="muted">distilGPT-2 (≈80 MB, quantized) downloads on your first scan and stays cached locally. No API keys, no servers.</span></div>
           <div><strong>Markdown export added.</strong><span class="muted">Take the full audit (Wayne flags + perplexity score) straight into Obsidian, Scrivener, or notes.</span></div>
-          <div><strong>Upload support included.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, or other readable text files.</span></div>
+          <div><strong>Text, PDF, and Word uploads.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, `.pdf`, or `.docx`. PDF.js and mammoth.js parse them locally on first use.</span></div>
         </div>
       </article>
       <aside class="panel stats">
@@ -184,8 +184,8 @@
         </div>
         <div class="upload-box">
           <label for="fileInput"><strong>Upload file</strong></label>
-          <input id="fileInput" type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.rtf" />
-          <div class="helper">Best fit: text-based files. PDFs and DOCX are not wired in this version.</div>
+          <input id="fileInput" type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.rtf,.pdf,.docx" />
+          <div class="helper">Text files, PDFs, and Word `.docx` documents. PDF/DOCX parsers (PDF.js, mammoth.js) load on first use and cache locally. Scanned/image PDFs are not extracted — no OCR.</div>
         </div>
         <label class="sr-only" for="inputText">Draft text</label>
         <textarea id="inputText" placeholder="Paste your article, essay, chapter section, op-ed, or newsletter draft here..."></textarea>
@@ -273,8 +273,15 @@
     let detectorModel = null;
     let detectorTokenizer = null;
     let detectorLoadPromise = null;
+    let pdfjsLib = null;
+    let pdfjsLoadPromise = null;
+    let mammothLib = null;
+    let mammothLoadPromise = null;
     const DETECTOR_MODEL_ID = 'Xenova/distilgpt2';
     const DETECTOR_LIB_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+    const PDFJS_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
+    const PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+    const MAMMOTH_URL = 'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js';
     const DETECTOR_MIN_CHARS = 50;
     const DETECTOR_MAX_TOKENS = 512;
     // Perplexity → AI-likeness score mapping (sigmoid centered at threshold)
@@ -657,12 +664,84 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+    async function loadPdfJs() {
+      if (pdfjsLib) return pdfjsLib;
+      if (pdfjsLoadPromise) return pdfjsLoadPromise;
+      pdfjsLoadPromise = (async () => {
+        const lib = await import(PDFJS_URL);
+        if (lib.GlobalWorkerOptions) lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        pdfjsLib = lib;
+        return lib;
+      })();
+      try { return await pdfjsLoadPromise; }
+      catch (err) { pdfjsLoadPromise = null; throw err; }
+    }
+    async function loadMammoth() {
+      if (mammothLib) return mammothLib;
+      if (mammothLoadPromise) return mammothLoadPromise;
+      mammothLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = MAMMOTH_URL;
+        script.async = true;
+        script.onload = () => {
+          if (window.mammoth) { mammothLib = window.mammoth; resolve(window.mammoth); }
+          else reject(new Error('mammoth.js loaded but global is missing'));
+        };
+        script.onerror = () => reject(new Error('Failed to load mammoth.js from CDN'));
+        document.head.appendChild(script);
+      }).catch(err => { mammothLoadPromise = null; throw err; });
+      return mammothLoadPromise;
+    }
+    async function extractTextFromPdf(file) {
+      const buf = await file.arrayBuffer();
+      const lib = await loadPdfJs();
+      const pdf = await lib.getDocument({ data: buf, disableAutoFetch: true, disableStream: true }).promise;
+      const pageTexts = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        pageTexts.push(content.items.map(item => (item && item.str) ? item.str : '').join(' '));
+      }
+      return pageTexts.join('\n\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    async function extractTextFromDocx(file) {
+      const buf = await file.arrayBuffer();
+      const mammoth = await loadMammoth();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      return (result && result.value ? result.value : '').trim();
+    }
     fileInput.addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      fileNameChip.textContent = file.name;
-      const text = await file.text();
-      inputText.value = text;
+      const lower = file.name.toLowerCase();
+      const isPdf = lower.endsWith('.pdf') || file.type === 'application/pdf';
+      const isDocx = lower.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      try {
+        if (isPdf) {
+          fileNameChip.textContent = `Parsing ${file.name}…`;
+          const text = await extractTextFromPdf(file);
+          inputText.value = text;
+          fileNameChip.textContent = file.name + (text ? '' : ' (no text)');
+          if (!text) {
+            reportBox.textContent = `${file.name}: no extractable text. Looks like a scanned or image-only PDF. OCR is not wired into this version — try the source Word/Pages file, copy-paste, or a text-based export.`;
+          }
+        } else if (isDocx) {
+          fileNameChip.textContent = `Parsing ${file.name}…`;
+          const text = await extractTextFromDocx(file);
+          inputText.value = text;
+          fileNameChip.textContent = file.name + (text ? '' : ' (no text)');
+          if (!text) {
+            reportBox.textContent = `${file.name}: no text extracted. The document may be empty or password-protected.`;
+          }
+        } else {
+          fileNameChip.textContent = file.name;
+          const text = await file.text();
+          inputText.value = text;
+        }
+      } catch (err) {
+        fileNameChip.textContent = file.name;
+        reportBox.textContent = `Could not read ${file.name}: ${err && err.message ? err.message : 'unknown error'}`;
+      }
     });
     scanBtn.addEventListener('click', runScan);
     clearBtn.addEventListener('click', () => {

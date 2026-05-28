@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wayne AI Tell Scanner</title>
-  <meta name="description" content="Wayne-mode AI-sheen scanner with an in-browser RoBERTa AI detector. No API calls. Your draft never leaves the page." />
+  <meta name="description" content="Wayne-mode AI-sheen scanner with an in-browser perplexity-based detector (distilGPT-2). No API calls. Your draft never leaves the page." />
   <link rel="preconnect" href="https://api.fontshare.com" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="preconnect" href="https://huggingface.co" crossorigin />
@@ -114,6 +114,7 @@
     .meter-bar { height:100%; width:0%; background:linear-gradient(90deg, var(--color-warning), var(--color-error)); transition: width 400ms var(--transition); }
     .meter-bar.detector { background:linear-gradient(90deg, var(--color-primary), var(--color-error)); }
     .detector-band { margin-top:0.5rem; font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.08em; min-height:1.2em; }
+    .detector-detail { margin-top:0.25rem; font-size:var(--text-xs); color:var(--color-text-faint); }
     .report { margin-top:var(--space-5); padding:var(--space-4); border-radius:var(--radius-lg); border:1px dashed var(--color-border); background:var(--color-surface-offset); white-space:pre-wrap; }
     .compare-box { padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-divider); min-height:220px; }
     .compare-box h4, .report h4, .results h4 { margin:0 0 var(--space-3); font-size:var(--text-base); }
@@ -144,7 +145,7 @@
         </div>
         <div>
           <h1>Wayne AI Tell Scanner</h1>
-          <p>Wayne-mode flags + in-browser RoBERTa AI detector. Nothing leaves the page.</p>
+          <p>Wayne-mode flags + in-browser perplexity detector. Nothing leaves the page.</p>
         </div>
       </div>
       <div class="top-actions">
@@ -158,10 +159,10 @@
       <article class="panel hero-copy">
         <div class="eyebrow">Wayne-mode audit</div>
         <h2>Cut the filler. Break the rhythm. Put some blood back in the sentence.</h2>
-        <p>This pass scores cadence, repetition, hedging, abstraction, passive drift, and soft openers. It also runs a small RoBERTa AI-text classifier in your browser and reports a 0–1 score next to the Wayne flags. No API calls. Your draft never leaves the page.</p>
+        <p>This pass scores cadence, repetition, hedging, abstraction, passive drift, and soft openers. It also runs a small distilGPT-2 model in your browser to measure how <em>predictable</em> the text is — the lower the perplexity, the more it reads like average LLM output. Nothing is sent to a server. Your draft never leaves the page.</p>
         <div class="hero-points">
-          <div><strong>In-browser detector.</strong><span class="muted">~80 MB model downloads on your first scan, then cached locally. No keys, no servers.</span></div>
-          <div><strong>Markdown export added.</strong><span class="muted">Take the full audit (Wayne flags + detector score) straight into Obsidian, Scrivener, or notes.</span></div>
+          <div><strong>In-browser perplexity check.</strong><span class="muted">distilGPT-2 (≈80 MB, quantized) downloads on your first scan and stays cached locally. No API keys, no servers.</span></div>
+          <div><strong>Markdown export added.</strong><span class="muted">Take the full audit (Wayne flags + perplexity score) straight into Obsidian, Scrivener, or notes.</span></div>
           <div><strong>Upload support included.</strong><span class="muted">Drop in `.txt`, `.md`, `.csv`, or other readable text files.</span></div>
         </div>
       </article>
@@ -192,7 +193,7 @@
           <button class="btn btn-primary" id="scanBtn" type="button">Scan draft</button>
           <button class="btn" id="clearBtn" type="button">Clear</button>
         </div>
-        <p class="footer-note">Detector is a GPT-2 era RoBERTa classifier — strong on classic AI sheen, weaker on modern GPT-4 / Claude output. Style triage blade, not a courtroom witness.</p>
+        <p class="footer-note">Perplexity from a small GPT-2 model is a triage signal, not proof. Some humans write predictably; some LLM output is high-perplexity. Treat it as a second opinion on your Wayne flags.</p>
       </article>
       <article class="panel results">
         <div class="section-title">
@@ -204,7 +205,7 @@
         </div>
         <div class="meta-grid">
           <div class="meta-card"><div class="stat-label">AI-sheen score (Wayne)</div><div class="stat-value" id="scoreValue">0</div><div class="meter"><div class="meter-bar" id="meterBar"></div></div></div>
-          <div class="meta-card"><div class="stat-label">RoBERTa detector</div><div class="stat-value" id="detectorValue">—</div><div class="meter"><div class="meter-bar detector" id="detectorMeterBar"></div></div><div class="detector-band" id="detectorBandText">Runs on first Scan (~80 MB one-time download)</div></div>
+          <div class="meta-card"><div class="stat-label">Perplexity (distilGPT-2)</div><div class="stat-value" id="detectorValue">—</div><div class="meter"><div class="meter-bar detector" id="detectorMeterBar"></div></div><div class="detector-band" id="detectorBandText">Runs on first Scan (~80 MB one-time download)</div><div class="detector-detail" id="detectorDetail"></div></div>
           <div class="meta-card"><div class="stat-label">Top issue</div><div id="topIssue">None</div></div>
           <div class="meta-card"><div class="stat-label">Reading</div><div id="summaryLine">Paste text and run a scan.</div></div>
         </div>
@@ -265,14 +266,20 @@
     const detectorValue = document.getElementById('detectorValue');
     const detectorMeterBar = document.getElementById('detectorMeterBar');
     const detectorBandText = document.getElementById('detectorBandText');
+    const detectorDetail = document.getElementById('detectorDetail');
     let fillerPatterns = [];
     let latestResult = null;
     let latestDetector = null;
-    let detectorPipeline = null;
+    let detectorModel = null;
+    let detectorTokenizer = null;
     let detectorLoadPromise = null;
-    const DETECTOR_MODEL = 'Xenova/roberta-base-openai-detector';
+    const DETECTOR_MODEL_ID = 'Xenova/distilgpt2';
     const DETECTOR_LIB_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
     const DETECTOR_MIN_CHARS = 50;
+    const DETECTOR_MAX_TOKENS = 512;
+    // Perplexity → AI-likeness score mapping (sigmoid centered at threshold)
+    const PERPLEXITY_THRESHOLD = 40;
+    const PERPLEXITY_SCALE = 15;
     const sampleText = `In today's world, the conversation around democracy is a nuanced and multifaceted issue. Furthermore, it is important to note that various stakeholders may have different perspectives on the matter. Overall, this complex landscape requires a thoughtful framework that can help us delve deeper into the broader implications of civic participation. The system was designed to be meaningful for readers, but it was also positioned to be robust enough for a wide range of users. In many ways, it appears that the language may well soften the point instead of driving it home.`;
     const rewriteTemplates = {
       'Corporate filler': 'Swap inflated terms for plain nouns and hard verbs. Make the line do work instead of sounding educated.',
@@ -289,23 +296,31 @@
       if (score >= 0.3) return 'Mixed signal';
       return 'Likely human';
     }
+    function perplexityToScore(ppl) {
+      // Sigmoid: low perplexity → high AI-likeness score
+      return 1 / (1 + Math.exp((ppl - PERPLEXITY_THRESHOLD) / PERPLEXITY_SCALE));
+    }
     function resetDetectorCard(message) {
       latestDetector = null;
       detectorValue.textContent = '—';
       detectorMeterBar.style.width = '0%';
-      detectorBandText.textContent = message || (detectorPipeline ? 'Click Scan to check' : 'Runs on first Scan (~80 MB one-time download)');
+      detectorBandText.textContent = message || (detectorModel ? 'Click Scan to check' : 'Runs on first Scan (~80 MB one-time download)');
+      detectorDetail.textContent = '';
     }
-    async function loadDetector() {
-      if (detectorPipeline) return detectorPipeline;
+    async function loadDetectorModel() {
+      if (detectorModel && detectorTokenizer) return { model: detectorModel, tokenizer: detectorTokenizer };
       if (detectorLoadPromise) return detectorLoadPromise;
       detectorLoadPromise = (async () => {
         detectorBandText.textContent = 'Loading transformers.js…';
         const mod = await import(DETECTOR_LIB_URL);
-        const { pipeline, env } = mod;
+        const { AutoTokenizer, AutoModelForCausalLM, env } = mod;
         env.allowLocalModels = false;
         env.useBrowserCache = true;
+        detectorBandText.textContent = 'Loading tokenizer…';
+        const tok = await AutoTokenizer.from_pretrained(DETECTOR_MODEL_ID);
         let lastPct = -1;
-        detectorPipeline = await pipeline('text-classification', DETECTOR_MODEL, {
+        const mdl = await AutoModelForCausalLM.from_pretrained(DETECTOR_MODEL_ID, {
+          dtype: 'q8',
           progress_callback: (p) => {
             if (!p) return;
             if (p.status === 'progress' && typeof p.progress === 'number') {
@@ -316,16 +331,18 @@
                 detectorMeterBar.style.width = `${pct}%`;
               }
             } else if (p.status === 'ready') {
-              detectorBandText.textContent = 'Model ready, analyzing…';
+              detectorBandText.textContent = 'Model ready';
               detectorMeterBar.style.width = '0%';
             } else if (p.status === 'initiate') {
-              detectorBandText.textContent = 'Fetching model files…';
+              detectorBandText.textContent = `Fetching ${p.file || 'model files'}…`;
             } else if (p.status === 'download') {
-              detectorBandText.textContent = `Downloading ${p.file || 'model'}…`;
+              detectorBandText.textContent = `Downloading ${p.file || 'model files'}…`;
             }
           }
         });
-        return detectorPipeline;
+        detectorModel = mdl;
+        detectorTokenizer = tok;
+        return { model: mdl, tokenizer: tok };
       })();
       try {
         return await detectorLoadPromise;
@@ -334,6 +351,47 @@
         throw err;
       }
     }
+    async function computePerplexity(text) {
+      const { model, tokenizer } = await loadDetectorModel();
+      const inputs = await tokenizer(text, { truncation: true, max_length: DETECTOR_MAX_TOKENS });
+      const inputIds = inputs.input_ids;
+      const dims = inputIds.dims || inputIds.shape;
+      const seqLen = dims[1];
+      if (seqLen < 2) throw new Error('Text too short for perplexity');
+      const attention = inputs.attention_mask;
+      const output = await model({ input_ids: inputIds, attention_mask: attention });
+      const logits = output.logits; // [1, seqLen, vocabSize]
+      const logitsDims = logits.dims || logits.shape;
+      const vocabSize = logitsDims[2];
+      const logitsData = logits.data;
+      const idsData = inputIds.data;
+      let totalLogProb = 0;
+      let count = 0;
+      for (let i = 0; i < seqLen - 1; i++) {
+        const offset = i * vocabSize;
+        // Numerically stable log-softmax
+        let maxLogit = -Infinity;
+        for (let j = 0; j < vocabSize; j++) {
+          const v = logitsData[offset + j];
+          if (v > maxLogit) maxLogit = v;
+        }
+        let sumExp = 0;
+        for (let j = 0; j < vocabSize; j++) {
+          sumExp += Math.exp(logitsData[offset + j] - maxLogit);
+        }
+        const logSumExp = maxLogit + Math.log(sumExp);
+        const targetToken = Number(idsData[i + 1]);
+        const logProb = logitsData[offset + targetToken] - logSumExp;
+        if (Number.isFinite(logProb)) {
+          totalLogProb += logProb;
+          count++;
+        }
+      }
+      if (count === 0) throw new Error('No valid tokens scored');
+      const avgLogProb = totalLogProb / count;
+      const perplexity = Math.exp(-avgLogProb);
+      return { perplexity, avgLogProb, tokensScored: count };
+    }
     async function runDetector(text) {
       if (!text || text.length < DETECTOR_MIN_CHARS) {
         resetDetectorCard(`Needs ${DETECTOR_MIN_CHARS}+ chars for detector`);
@@ -341,35 +399,28 @@
       }
       try {
         detectorValue.textContent = '…';
-        if (!detectorPipeline) {
+        if (!detectorModel) {
           detectorBandText.textContent = 'Loading detector (one-time)…';
           detectorMeterBar.style.width = '0%';
         } else {
-          detectorBandText.textContent = 'Analyzing…';
+          detectorBandText.textContent = 'Computing perplexity…';
           detectorMeterBar.style.width = '0%';
         }
-        const pipe = await loadDetector();
-        const results = await pipe(text, { top_k: null, truncation: true });
-        const arr = Array.isArray(results) ? results : [results];
-        // Model returns [{label, score}, ...]. "Fake" / LABEL_1 = machine-generated. Prefer that score.
-        let fake = arr.find(r => r && typeof r.label === 'string' && (
-          r.label === 'Fake' || r.label === 'LABEL_1' || /fake|machine|ai/i.test(r.label)
-        ));
-        if (!fake && arr.length === 2) {
-          const real = arr.find(r => r && typeof r.label === 'string' && (
-            r.label === 'Real' || r.label === 'LABEL_0' || /real|human/i.test(r.label)
-          ));
-          if (real) fake = { score: 1 - real.score, label: 'Fake (derived)' };
-        }
-        const score = (fake && typeof fake.score === 'number') ? fake.score : 0;
-        latestDetector = { score: score, raw: arr };
+        detectorDetail.textContent = '';
+        const t0 = performance.now();
+        const ppl = await computePerplexity(text);
+        const t1 = performance.now();
+        const score = perplexityToScore(ppl.perplexity);
+        latestDetector = { score, perplexity: ppl.perplexity, avgLogProb: ppl.avgLogProb, tokensScored: ppl.tokensScored, durationMs: Math.round(t1 - t0) };
         detectorValue.textContent = score.toFixed(2);
         detectorMeterBar.style.width = `${Math.min(100, Math.max(0, score * 100))}%`;
         detectorBandText.textContent = detectorBand(score);
+        detectorDetail.textContent = `Perplexity ${ppl.perplexity.toFixed(1)} · ${ppl.tokensScored} tokens · ${Math.round(t1 - t0)} ms`;
       } catch (err) {
         detectorValue.textContent = '—';
         detectorMeterBar.style.width = '0%';
-        detectorBandText.textContent = ('Error: ' + (err && err.message ? err.message : 'unknown')).slice(0, 80);
+        detectorBandText.textContent = ('Error: ' + (err && err.message ? err.message : 'unknown')).slice(0, 100);
+        detectorDetail.textContent = '';
       }
     }
     function tokenizeSentences(text) {
@@ -577,19 +628,24 @@
       if (!latestDetector) return '';
       const s = latestDetector.score.toFixed(3);
       const b = detectorBand(latestDetector.score);
+      const ppl = latestDetector.perplexity.toFixed(1);
       if (asMarkdown) {
-        return '\n\n## RoBERTa AI detector (in-browser)\n' +
-               `- Score: **${s}** / 1.000\n` +
+        return '\n\n## Perplexity detector (in-browser distilGPT-2)\n' +
+               `- AI-likeness score: **${s}** / 1.000\n` +
+               `- Perplexity: **${ppl}** (lower = more predictable / more LLM-like)\n` +
+               `- Tokens scored: ${latestDetector.tokensScored}\n` +
                `- Reading: **${b}**\n` +
-               `- Model: \`${DETECTOR_MODEL}\`\n` +
-               `- Note: GPT-2 era detector; reliable on classic AI sheen, weaker on modern GPT-4 / Claude.\n`;
+               `- Model: \`${DETECTOR_MODEL_ID}\` (quantized int8)\n` +
+               `- Note: Perplexity is a triage signal, not proof. A small GPT-2 era model; modern long-context models may shift the distribution.\n`;
       } else {
-        return '\n\nROBERTA AI DETECTOR (in-browser)\n' +
+        return '\n\nPERPLEXITY DETECTOR (in-browser distilGPT-2)\n' +
                '--------------------------------\n' +
-               `Score: ${s} / 1.000\n` +
+               `AI-likeness score: ${s} / 1.000\n` +
+               `Perplexity: ${ppl} (lower = more predictable / more LLM-like)\n` +
+               `Tokens scored: ${latestDetector.tokensScored}\n` +
                `Reading: ${b}\n` +
-               `Model: ${DETECTOR_MODEL}\n` +
-               `Note: GPT-2 era detector; reliable on classic AI sheen, weaker on modern GPT-4 / Claude.\n`;
+               `Model: ${DETECTOR_MODEL_ID} (quantized int8)\n` +
+               `Note: Perplexity is a triage signal, not proof. A small GPT-2 era model; modern long-context models may shift the distribution.\n`;
       }
     }
     function downloadBlob(content, filename, type) {
